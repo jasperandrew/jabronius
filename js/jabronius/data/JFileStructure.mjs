@@ -11,18 +11,18 @@ export class JFileStructure {
         this.setCurDir = (f) => { _cur = f; };
 
         this.getFileFromPath = (path, resolve=false) => {
-            if(path[0] !== '/'){
+            if (path[0] !== '/') {
                 path = _cur.getPath() + '/' + path;
             }
             path = path.split('/');
             let file = _root;
             path.forEach(p => {
-                if(!file || file.getType() === 'data') return undefined;
-                if(file.getType() === 'link') file = this.getFileFromPath(file.getData());
-                if(p !== '') file = file.getData()[p];
+                if (!file || file.getType() === 'data') return undefined;
+                if (file.getType() === 'link') file = this.getFileFromPath(file.getData());
+                if (p !== '') file = file.getData()[p];
             });
 
-            if(resolve) {
+            if (resolve) {
                 if(file && file.getType() === 'link') file = this.getFileFromPath(file.getData());
             }
 

@@ -1,5 +1,5 @@
 import { Shell } from './firmware/Shell.mjs';
-import { Keyboard, ModCtrl } from './hardware/Keyboard.mjs';
+import { Keyboard } from './hardware/Keyboard.mjs';
 import { Display } from './hardware/Display.mjs';
 import { JFileStructure } from './data/JFileStructure.mjs';
 import { JPath } from './data/JPath.mjs';
@@ -64,28 +64,7 @@ export class System {
         };
 
         this.onKeySignal = (signal) => {
-            const prompt = document.querySelector('#command');
-
-            if (signal.char) {
-                prompt.value += signal.char;
-                _shell.history.setLvl(0);
-                return;
-            }
-    
-            switch (signal.code) {
-                case 'Enter': _shell.submit(); break;
-                case 'ArrowUp':
-                case 'ArrowDown': _shell.history.nav(signal); break;
-                case 'Backspace':
-                    if (signal.mod(ModCtrl)) {
-                        let val = prompt.value;
-                        const match = val.match(/\S*\s*$/);
-                        prompt.value = val.slice(0, val.lastIndexOf(match));
-                    } else {
-                        prompt.value = prompt.value.slice(0, -1);
-                    }
-                default:
-            }
+            _shell.onKeySignal(signal);
         };
 
         this.getFileStruct = () => _file_struct;
@@ -94,6 +73,7 @@ export class System {
         this.getPC = () => _pc;
 
         this.cd = (path) => {
+            console.log(path);
             if (!path) path = '/home/jasper';
             let file = _file_struct.getFileFromPath(path, true);
             if (!file) {
@@ -111,28 +91,67 @@ export class System {
         };
 
         this.run = (argstr, dir=_file_struct.getFileFromPath('/bin')) => {
+            function parseArgs(str) {
+                let delims = ['"', '\''],
+                    args = [],
+                    start = 0, i = 0;
+        
+                while (i < str.length) {
+                    let arg = '';
+        
+                    if (i >= str.length-1) { // e "u c" f
+                        arg = str.slice(start);
+                    } else if (str[i] === ' ') {
+                        arg = str.slice(start, i);
+                        start = i+1;
+                    } else if (delims.indexOf(str[i]) > -1) {
+                        let d = str[i++];
+                        start = i;
+                        while(str[i] !== d){
+                            i++;
+                            if(i >= str.length){
+                                _shell.error(`parse: missing delimiter (${d})`);
+                                return null;
+                            }
+                        }
+                        arg = str.slice(start, i);
+                        start = i+1;
+                    }
+        
+                    if (arg !== '' && arg !== ' ') args.push(arg);
+                    i++;
+                }
+                
+                return args;
+            }
+        
             if (util.typeof(argstr) !== 'String') {
                 console.error('Arguments must be a string');
                 return false;
             }
 
-            const args = util.parseArgs(argstr),
-                    cmd = args[0];
-            // console.log(args);
+            const args = parseArgs(argstr),
+                name = args[0];
 
-            if (cmd === 'cd') {
+            if (name === 'cd') {
                 this.cd(args[1]);
                 return true;
             }
-            // console.log(dir.getName());
 
-            if (dir.getData()[cmd] !== undefined) {
-                const f = new Function(['sys','shell','fs','args'], dir.getData()[cmd].getData());
-                return f(this, _shell, _file_struct, args);
-            } else {
-                _shell.error(`${cmd}: command not found`);
-                return false;
+            let file = dir?.getData()[name];
+            switch (file?.getType()) {
+                case 'link': {
+                    file = _file_struct.getFileFromPath(file.getData(), true);
+                }
+                case 'data': {
+                    if (!file) break;
+                    const f = new Function(['sys','shell','fs','args'], file.getData());
+                    return f(this, _shell, _file_struct, args);
+                }
             }
+
+            _shell.error(`${name}: command not found`);
+            return false;
         };
 
         this.startup = (settings) => {
@@ -163,6 +182,11 @@ export class System {
             
             file.setData(append ? file.getData() + data : data);
             return true;
+        };
+
+        this.pushFrame = (frameBuffer, clear=true) => {
+            const frameRows = frameBuffer.split('\n');
+            _display.displayFrame(frameRows, clear);
         };
 
         ////// Initialize /////////////////////

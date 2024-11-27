@@ -1,36 +1,43 @@
+import { ModCtrl } from "../hardware/Keyboard.mjs";
+
 export class Shell {
     constructor(_sys) {
         ////// Private Fields /////////////////
-        let _printing, _print_queue, _print_delay,
-            _el_command, _el_readout, _el_header;
+        let _printing = false, _print_queue = [], _print_delay = true,
+            _buffer = '', _prompt = '',
+
+            _history = (() => {
+                let _lvl = 0, _list = [], _curr = '',
+                
+                nav = (key) => {
+                    if (_lvl === 0) _curr = _prompt;
+    
+                    if (key === 'ArrowUp') {
+                        _lvl += (_lvl > _list.length-1 ? 0 : 1);
+                    } else if (key === 'ArrowDown') {
+                        _lvl += (_lvl < 0 ? 0 : -1);
+                    }
+                
+                    if (_lvl > 0) _prompt = _list[_lvl-1];
+                    else _prompt = _curr;    
+                },
+                
+                add = (cmd) => {
+                    _lvl = 0;
+                    if (_list[0] !== cmd) _list.unshift(cmd);
+                },
+                
+                setLvl = (n) => { _lvl = n; };
+    
+                return { nav: nav, add: add, setLvl: setLvl };
+            })(),
+    
+            _outputFrame = (onlyPrompt=false) => {
+                const frameBuffer = (!onlyPrompt ? _buffer : '') + '> ' + _prompt;
+                _sys.pushFrame(frameBuffer, !onlyPrompt);
+            };
 
         ////// Public Fields //////////////////
-        this.history = (() => {
-            let _lvl = 0, _list = [], _curr = '',
-            
-            nav = (key) => {
-                if (_lvl === 0) _curr = _el_command.value;
-
-                if (key === 'ArrowUp') {
-                    _lvl += (_lvl > _list.length-1 ? 0 : 1);
-                } else if (key === 'ArrowDown') {
-                    _lvl += (_lvl < 0 ? 0 : -1);
-                }
-            
-                if (_lvl > 0) _el_command.value = _list[_lvl-1];
-                else _el_command.value = _curr;    
-            },
-            
-            add = (cmd) => {
-                _lvl = 0;
-                if (_list[0] !== cmd) _list.unshift(cmd);
-            },
-            
-            setLvl = (n) => { _lvl = n; };
-
-            return { nav: nav, add: add, setLvl: setLvl };
-        })();
-
         this.error = (msg) => {
             this.print('[!] ' + msg);
         };
@@ -71,7 +78,8 @@ export class Shell {
                 window.setTimeout(() => {
                     doPrint();
                 }, _print_delay ? 17 : 0);
-                _el_readout.innerHTML += out + (newline ? '\n' : '');
+                _buffer += out + (newline ? '\n' : '');
+                _outputFrame();
             }
 
             _print_queue.push(input);
@@ -82,27 +90,50 @@ export class Shell {
             doPrint();
         };
 
+        this.onKeySignal = (signal) => {
+            if (signal.char) {
+                _prompt += signal.char;
+                _history.setLvl(0);
+                _outputFrame(true);
+                return;
+            }
+    
+            switch (signal.code) {
+                case 'Enter': this.submit(); return;
+                case 'ArrowUp':
+                case 'ArrowDown': _history.nav(signal.code); break;
+                case 'Backspace':
+                    if (signal.mod(ModCtrl)) {
+                        let val = _prompt;
+                        const match = val.match(/\S*\s*$/);
+                        _prompt = val.slice(0, val.lastIndexOf(match));
+                    } else {
+                        _prompt = _prompt.slice(0, -1);
+                    }
+                default:
+            }
+            _outputFrame(true);
+        };
+
         this.submit = (cmd) => {
             if (!cmd) {
-                cmd = _el_command.value;
-                _el_command.value = '';
+                cmd = _prompt;
+                _prompt = '';
             }
 
             this.print('> ' + cmd);
 
             if (/\S/.test(cmd)) {
-                this.history.add(cmd);
+                _history.add(cmd);
                 _sys.run(cmd);
             }
         };
+
+        this.clearBuffer = () => {
+            _buffer = '';
+            _outputFrame();
+        }
         
         ////// Initialize /////////////////
-        _printing = false;
-        _print_queue = [];
-        _print_delay = true;
-
-        _el_command = document.querySelector('#command');
-        _el_readout = document.querySelector('#readout');
-        _el_header = document.querySelector('#header');
     }
 }

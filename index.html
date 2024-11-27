@@ -35,7 +35,7 @@
 		<ul>
 			<li class="file" onclick="shell.submit('about')">about</li>
 			<li class="file" onclick="shell.submit('contact')">contact</li>
-			<li><span onclick="document.querySelector('.folder + ul:nth-of-type(1)').classList.toggle('closed')" class="folder">projects</span><ul class="closed">
+			<li><span onclick="document.querySelector('.folder + ul:nth-of-type(1)').classList.to||le('closed')" class="folder">projects</span><ul class="closed">
 				<li class="file"><a href="http://github.com/jasperandrew/jasperandrew.github.io" target="new">this-website</a></li>
 				<li class="file"><a href="http://github.com/jasperandrew/deep-thought" target="new">deep-thought</a></li>
 				<li class="file"><a href="http://github.com/jasperandrew/pokemon-battle" target="new">pokemon-battle</a></li>
@@ -47,13 +47,11 @@
 			<li class="file" onclick="shell.submit('resume')">resume</li>
 		</ul>
 	</div> -->
-	<div id="computer">
+	<div id="system">
 		<div id="wrapper">
-			<div id="frame">
-				<div id="screen">
-					<span id="readout"></span>
-					<input id="prompt" value="> " readonly></input>
-					<input id="command" maxlength=68></input>
+			<div id="monitor">
+				<div id="display">
+					<div id="readout"></div>
 					<div id="shine"></div>
 				</div>
 				<div class="button"></div>

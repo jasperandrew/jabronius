@@ -1,8 +1,6 @@
 @import 'https://fonts.googleapis.com/css?family=Open+Sans';
 @import 'https://fonts.googleapis.com/css?family=Ubuntu+Mono';
-
-* {
-}
+@import url('https://fonts.googleapis.com/css2?family=Fira+Mono');
 
 html, body {
   background-color: #e7e7e7;
@@ -55,7 +53,7 @@ div { box-sizing: border-box; }
   content: "/";
 }
 
-#computer {
+#system {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -69,7 +67,7 @@ div { box-sizing: border-box; }
   margin: auto 0;
 }
 
-#frame {
+#monitor {
   position: relative;
   width: 100%;
   height: 70%;
@@ -77,47 +75,38 @@ div { box-sizing: border-box; }
   border-radius: 7px;
 }
 
-#screen {
+#display {
   position: absolute;
   width: 94%;
   height: 90%;
   top: 4%;
   left: 3%;
   background: #070707;
-	color: #39ab3d;
-	font-size: 2.355vmin;
-	font-family: 'Ubuntu Mono', monospace;
 	overflow: hidden;
 }
-#screen.on {
+#display.on {
   background: #171717;
 }
 
-#screen * {
+#display * {
 	opacity: 0;
 	transition: opacity 0.2s;
 }
-#screen.on * { opacity: 1; }
+#display.on * { opacity: 1; }
  
-#header {
-	position: absolute;
-	left: 0.5%;
-  width: 99%;
-  border-bottom: 1px dotted #39ab3d7d;
-  background: inherit;
-  z-index: 10;
-  font-size: 1.35vw;
-}
-
 #readout {
-	position: absolute;
-	bottom: 5.9%;
-	left: 1%;
-  width: 98%;
-  word-break: break-all;
-  z-index: 9;
   cursor: default;
-  white-space: pre-wrap;
+  width: 100%;
+  height: 100%;
+  padding: 0.5%;
+  color: #39ab3d;
+	font-size: 1.965vmin;
+	font-family: 'Fira Mono', monospace;
+
+  position: relative;
+  z-index: 999;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 #readout a {
@@ -125,50 +114,24 @@ div { box-sizing: border-box; }
 }
 
 #readout a:hover {
-  color: #54ad57;
+  color: #62dd66;
 }
 
 #readout b {
   color: #74d978;
 }
 
-#prompt {
-	position: absolute;
-	bottom: 1.25%;
-	left: 0.9%;
-	width: 98%;
-	border: none;
-	background: transparent;
-	color: #39ab3d;
-  font-family: Ubuntu Mono, monospace;
-  font-size: inherit;
-	cursor: default;
-}
-
-.pre {
+#readout > span {
+  display: block;
+  height: calc(100%/25);
+  text-align: center;
   white-space: pre;
 }
 
-#command {
-	position: absolute;
-	bottom: 1.25%;
-	right: 1%;
-	width: 95%;
-	border: none;
-  background: transparent;
-  color: #39ab3d;
-	/* text-shadow: 0 0 0 #39ab3d; */
-  font-family: 'Ubuntu Mono', monospace;
-  font-size: inherit;
-	cursor: default;
-}
-#command:focus{
-	outline: none;
-}
-
 #shine {
-  position: relative;
+  position: absolute;
   left: 10%;
+  top: 0;
   background: transparent;
   border-top: calc(90vmin * .7) solid #fff;
 	border-right: calc(90vmin * .125) solid transparent;
@@ -190,7 +153,7 @@ div { box-sizing: border-box; }
   height: calc(90vmin * .7);
 }
 
-#screen.on #shine {
+#display.on #shine {
   opacity: 0 !important;
 }
 

@@ -18,9 +18,6 @@
 
 - move all sys output to out function
 
-- update the whole display in text "frames"
-    - character "pixel" grid?
-
 - component responsibilities:
     - display: display data
     - drive: store/retrieve data
@@ -28,3 +25,6 @@
     - processor: read, write, execute
     - shell: abstract/interact with file system
     - system: communicate between components
+
+- fix cd to root issue
+- add blinking caret to prompt

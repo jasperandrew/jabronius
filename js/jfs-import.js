@@ -6,38 +6,32 @@ const JFS_IMPORT = [
             {
                 "type": "data",
                 "name": "about",
-                "data": `shell.print('Hey, I\\'m Jasper.');
-return false;`
+                "data": `shell.print('Hey, I\\'m Jasper. todo');`
             },
             {
                 "type": "data",
                 "name": "cat",
                 "data": `const file = fs.getFileFromPath(args[1], true);
-if(!file){
+if (!file) {
     shell.error(args[1] + ': does not exist');
-    return false;
+    return;
 }
 
-if(file.type.search('fldr') > -1){
+if (file.getType().indexOf('fldr') > -1) {
     shell.error(args[1] + ': is a folder');
-    return false;
+    return;
 }
-shell.print(file.getData());
-return true;`
+shell.print(file.getData());`
             },
             {
                 "type": "data",
                 "name": "clear",
-                "data": `document.querySelector('#readout').innerHTML = '';
-return true;`
+                "data": `shell.clearBuffer();`
             },
             {
                 "type": "data",
                 "name": "contact",
-                "data": `shell.print([
-    '☎ +1 (831) 334-7779',
-    '✉ <a href="mailto:jasper.q.andrew@gmail.com">jasper.q.andrew@gmail.com</a>']);
-return true;`
+                "data": `shell.print('✉ <a href="mailto:jasper.q.andrew@gmail.com">jasper.q.andrew@gmail.com</a>'); return true;`
             },
             {
                 "type": "link",
@@ -47,40 +41,22 @@ return true;`
             {
                 "type": "data",
                 "name": "echo",
-                "data": `[, ...args] = args;
-let str = '';
-args.forEach(arg => { str += arg + ' '; });
-shell.print(str);
-return true;`
+                "data": `args.shift(); shell.print(args.join(' '));`
             },
             {
                 "type": "data",
                 "name": "help",
-                "data": `[, ...args] = args;
-shell.print('blah');
-args.forEach(arg => {shell.print(arg);});
-return true;`
-            },
-            {
-                "type": "data",
-                "name": "jasper",
-                "data": `shell.print(util.jasper_str);
-return true;`
+                "data": `shell.error(args[0] + ': program not implemented');`
             },
             {
                 "type": "data",
                 "name": "login",
-                "data": `shell.error('login: program not implemented');
-return false;`
+                "data": `shell.error(args[0] + ': program not implemented');`
             },
             {
                 "type": "data",
                 "name": "ls",
-                "data": `const cur = fs.getCurDir().getData();
-let sortable = [];
-for(let f in cur) sortable.push(cur[f]);
-sortable.sort((a,b) => a.getName().localeCompare(b.getName()));
-for(let i in sortable) shell.print(sortable[i].toString());`
+                "data": `const list = fs.getCurDir().getData(); shell.print(Object.keys(list).toSorted((a,b) => a.localeCompare(b)).map(name => list[name].toString()));`
             },
             {
                 "type": "data",
@@ -102,26 +78,12 @@ return true;`
             {
                 "type": "data",
                 "name": "touch",
-                "data": `if(!args[1]){
-    shell.error('touch: no filepath provided');
-    return false;
-}
-const fp = new JPath(args[1]);
-if(!fs.isValidPath(fp.toString())){
-    fp.up();
-    if(!fs.isValidPath(fp.toString())){
-        shell.error('touch: ' + fp.toString() + ' does not exist');
-        return false;
-    }
-    fs.getFileFromPath(fp.toString()).addFile(new FSFile(fp.getLeaf(), 'data', null));
-}
-return true;`
+                "data": `shell.error(args[0] + ': program not implemented');`
             },
             {
                 "type": "data",
                 "name": "welcome",
-                "data": `shell.print(util.welcome_str);
-return true;`
+                "data": `shell.print(util.welcome_str);`
             },
         ]
     },
