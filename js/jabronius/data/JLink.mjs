@@ -5,6 +5,6 @@ export class JLink extends JFile {
         super(name, 'link', path);
 
         // Public Fields //////////////////
-        this.toString = () => { return this.getName() + ' -> ' + this.getData(); };
+        this.toString = () => { return this.getName() + ' -> ' + this.getContent(); };
     }
 }

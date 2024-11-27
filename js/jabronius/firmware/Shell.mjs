@@ -1,7 +1,8 @@
 import { ModCtrl } from "../hardware/Keyboard.mjs";
+import { parseArgs } from "../System.mjs";
 
 export class Shell {
-    constructor(_sys) {
+    constructor(_sys, _dirPath='/') {
         ////// Private Fields /////////////////
         let _printing = false, _print_queue = [], _print_delay = true,
             _buffer = '', _prompt = '',
@@ -35,6 +36,59 @@ export class Shell {
             _outputFrame = (onlyPrompt=false) => {
                 const frameBuffer = (!onlyPrompt ? _buffer : '') + '> ' + _prompt;
                 _sys.pushFrame(frameBuffer, !onlyPrompt);
+            },
+
+            _getDir = () => _verifyDir(_sys.getFileSys().getFileFromPath(_dirPath), _dirPath),
+
+            _getRelDir = (relPath) => {
+                const absPath = _dirPath + (relPath ? `/${relPath}` : '');
+                return _verifyDir(_sys.getFileSys().getFileFromPath(absPath, true), relPath);
+            },
+
+            _verifyDir = (file, path) => {
+                if (!file) {
+                    this.error(`${path}: path not found`);
+                    return null;
+                }
+                
+                if (file.getType().search('fldr') === -1) {
+                    this.error(`${file.getName()}: not a directory`);
+                    return null;
+                }
+
+                return file;
+            },
+
+            _commands = {
+                cd: (args) => {
+                    let relPath = args[1],
+                        file = _getRelDir(relPath);
+
+                    if (!file) return false;
+        
+                    _dirPath = file.getPath();
+                    return true;
+                },
+                ls: (args) => {
+                    let relPath = args[1], folder;
+                    if (relPath) folder = _getRelDir(relPath);
+                    else folder = _getDir();
+
+                    if (!folder) return false;
+
+                    const list = folder.getContent();
+                    this.print(
+                        Object.keys(list)
+                            .toSorted((a,b) => a.localeCompare(b))
+                            .map(name => list[name].toString()));
+                },
+                clear: () => this.clearBuffer(),
+                echo: (args) => {
+                    args.shift();
+                    this.print(args.join(' '));
+                },
+                pwd: () => this.print(_dirPath),
+                rm: (args) => this.error(args[0] + ': program not implemented'),
             };
 
         ////// Public Fields //////////////////
@@ -52,7 +106,7 @@ export class Shell {
                         else queue = [p];
                     } else {
                         _printing = false;
-                        return true;    
+                        return true;
                     }
                 }
 
@@ -115,17 +169,25 @@ export class Shell {
             _outputFrame(true);
         };
 
-        this.submit = (cmd) => {
-            if (!cmd) {
-                cmd = _prompt;
+        this.submit = (argStr) => {
+            if (!argStr) {
+                argStr = _prompt;
                 _prompt = '';
             }
 
-            this.print('> ' + cmd);
+            this.print('> ' + argStr);
 
-            if (/\S/.test(cmd)) {
-                _history.add(cmd);
-                _sys.run(cmd);
+            if (/\S/.test(argStr)) {
+                _history.add(argStr);
+
+                const args = parseArgs(argStr),
+                    name = args[0];
+
+                if (Object.keys(_commands).includes(name)) {
+                    _commands[name](args);
+                } else {
+                    _sys.run(argStr);
+                }
             }
         };
 

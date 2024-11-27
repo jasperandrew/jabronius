@@ -1,8 +1,9 @@
 import { Shell } from './firmware/Shell.mjs';
 import { Keyboard } from './hardware/Keyboard.mjs';
 import { Display } from './hardware/Display.mjs';
-import { JFileStructure } from './data/JFileStructure.mjs';
 import { JPath } from './data/JPath.mjs';
+import { FileSystem } from './firmware/FileSystem.mjs';
+import { JFile } from './data/JFile.mjs';
 
 export class System {
     constructor() {
@@ -11,7 +12,7 @@ export class System {
             _display, _keyboard, _cpu, _drive,
             _shell;
 
-        let _file_struct, _user, _pc;
+        let _filesys, _user;
 
         ////// Public Fields //////////////////
         this.importSettingsFromURL = () => {
@@ -67,95 +68,38 @@ export class System {
             _shell.onKeySignal(signal);
         };
 
-        this.getFileStruct = () => _file_struct;
+        this.getFileSys = () => _filesys;
         this.getShell = () => _shell;
         this.getUser = () => _user;
-        this.getPC = () => _pc;
 
-        this.cd = (path) => {
-            console.log(path);
-            if (!path) path = '/home/jasper';
-            let file = _file_struct.getFileFromPath(path, true);
-            if (!file) {
-                _shell.error(`${path}: does not exist`);
-                return false;
-            }
-            
-            if (file.getType().search('fldr') === -1) {
-                _shell.error(`${path}: not a directory`);
-                return false;
-            }
-
-            _file_struct.setCurDir(file);
-            return true;
-        };
-
-        this.run = (argstr, dir=_file_struct.getFileFromPath('/bin')) => {
-            function parseArgs(str) {
-                let delims = ['"', '\''],
-                    args = [],
-                    start = 0, i = 0;
-        
-                while (i < str.length) {
-                    let arg = '';
-        
-                    if (i >= str.length-1) { // e "u c" f
-                        arg = str.slice(start);
-                    } else if (str[i] === ' ') {
-                        arg = str.slice(start, i);
-                        start = i+1;
-                    } else if (delims.indexOf(str[i]) > -1) {
-                        let d = str[i++];
-                        start = i;
-                        while(str[i] !== d){
-                            i++;
-                            if(i >= str.length){
-                                _shell.error(`parse: missing delimiter (${d})`);
-                                return null;
-                            }
-                        }
-                        arg = str.slice(start, i);
-                        start = i+1;
-                    }
-        
-                    if (arg !== '' && arg !== ' ') args.push(arg);
-                    i++;
-                }
-                
-                return args;
-            }
-        
+        this.run = (argstr, dir=_filesys.getFileFromPath('/bin')) => {        
             if (util.typeof(argstr) !== 'String') {
                 console.error('Arguments must be a string');
                 return false;
             }
 
             const args = parseArgs(argstr),
-                name = args[0];
+                name = args[0],
+                cmdPath = dir.getPath() + `/${name}`;
 
-            if (name === 'cd') {
-                this.cd(args[1]);
-                return true;
+            let file = _filesys.getFileFromPath(cmdPath, true);
+
+            if (!file) {
+                _shell.error(`${name}: command not found`);
+                return false;
+            }
+            
+            if (file.getType() === 'fldr') {
+                this.error(`${name}: is a directory`);
+                return false;
             }
 
-            let file = dir?.getData()[name];
-            switch (file?.getType()) {
-                case 'link': {
-                    file = _file_struct.getFileFromPath(file.getData(), true);
-                }
-                case 'data': {
-                    if (!file) break;
-                    const f = new Function(['sys','shell','fs','args'], file.getData());
-                    return f(this, _shell, _file_struct, args);
-                }
-            }
-
-            _shell.error(`${name}: command not found`);
-            return false;
+            const f = new Function(['SYS','SHELL','FS','ARGS'], file.getContent());
+            return f(this, _shell, _filesys, args);
         };
 
         this.startup = (settings) => {
-            this.run('clear');
+            _shell.clearBuffer();
             if (settings.welcome) this.run('welcome');
             if (settings.cmd) settings.cmd.forEach(c => this.run(c));	
         };
@@ -163,14 +107,14 @@ export class System {
         this.write = (data='', path, append=false) => {
             const fp = new JPath(path);
             let file;
-            if (!_file_struct.isValidPath(fp.toString())) {
+            if (!_filesys.isValidPath(fp.toString())) {
                 fp.up();
-                if (!_file_struct.isValidPath(fp.toString())) {
+                if (!_filesys.isValidPath(fp.toString())) {
                     _shell.error(`${fp.toString()} does not exist`);
                     return false;
                 }
                 file = new JFile(fp.getLeaf(), 'data', null);
-                _file_struct.getFileFromPath(fp.toString()).addFile(file);
+                _filesys.getFileFromPath(fp.toString()).addFile(file);
             } else {
                 file = fp.getFile();
             }
@@ -180,7 +124,7 @@ export class System {
                 return false;
             }
             
-            file.setData(append ? file.getData() + data : data);
+            file.setData(append ? file.getContent() + data : data);
             return true;
         };
 
@@ -200,15 +144,48 @@ export class System {
         _keyboard = new Keyboard(this);
         // _cpu = new Processor();
         // _drive = new Drive();
-        _shell = new Shell(this);
+        _shell = new Shell(this, '/home/jasper');
 
         this.importSettingsFromURL();
         if (_settings['on']) _display.togglePower();
 
-        _file_struct = new JFileStructure();
+        _filesys = new FileSystem();
         _user = 'jasper';
-        _pc = 'PC';
 
         this.startup(_settings);
     }
+}
+
+export const parseArgs = (str) => {
+    let delims = ['"', '\''],
+        args = [],
+        start = 0, i = 0;
+
+    while (i < str.length) {
+        let arg = '';
+
+        if (i >= str.length-1) { // e "u c" f
+            arg = str.slice(start);
+        } else if (str[i] === ' ') {
+            arg = str.slice(start, i);
+            start = i+1;
+        } else if (delims.indexOf(str[i]) > -1) {
+            let d = str[i++];
+            start = i;
+            while(str[i] !== d){
+                i++;
+                if(i >= str.length){
+                    _shell.error(`parse: missing delimiter (${d})`);
+                    return null;
+                }
+            }
+            arg = str.slice(start, i);
+            start = i+1;
+        }
+
+        if (arg !== '' && arg !== ' ') args.push(arg);
+        i++;
+    }
+    
+    return args;
 }

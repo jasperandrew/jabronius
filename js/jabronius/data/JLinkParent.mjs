@@ -5,7 +5,7 @@ export class JLinkParent extends JLink {
         super('..', null);
     
         // Public Fields //////////////////
-        this.getData = () => { return this.getParent().getParent().getPath(); };
+        this.getContent = () => { return this.getParent().getParent().getPath(); };
         this.toString = () => { return this.getName(); };
     }
 }

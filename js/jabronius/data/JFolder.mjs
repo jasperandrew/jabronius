@@ -9,7 +9,7 @@ export class JFolder extends JFile {
 
         // Public Methods /////////////////
         this.addFile = (f) => {
-            this.getData()[f.getName()] = f;
+            this.getContent()[f.getName()] = f;
             f.setParent(this);
         };
         this.import = (arrJSON) => {
@@ -29,7 +29,7 @@ export class JFolder extends JFile {
             if(depth === -1) depth = Infinity;
             let str = this.getName() + '/';
             if(depth === i) return str;
-            const data = this.getData();
+            const data = this.getContent();
             for(let d in data){
                 str += `\n${'    '.repeat(i+1) + data[d].toString(depth,i+1)}`;
             }
