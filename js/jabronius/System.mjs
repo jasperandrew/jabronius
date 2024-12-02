@@ -94,12 +94,25 @@ export class System {
             }
             
             if (file.getType() === FLDR) {
-                this.error(`${name}: is a directory`);
+                _shell.error(`${name}: is a directory`);
                 return false;
             }
 
-            const f = new Function(['SYS','SHELL','FS','ARGS'], file.getContent());
-            return f(this, _shell, _filesys, args);
+            try {
+                const f = new Function(['SYS','SHELL','FS','ARGS'], file.getContent());
+                return f(this, _shell, _filesys, args);
+            } catch (e) {
+                let msg = e.name;
+                if (e.lineNumber) {
+                    msg += ` (${e.lineNumber}`
+                    if (e.columnNumber) msg += `,${e.columnNumber}`;
+                    msg += ')';
+                }
+                msg += `: ${e.message}`;
+                _shell.error(msg);
+                console.error(e);
+                return false;
+            }
         };
 
         this.startup = (settings) => {

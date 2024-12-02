@@ -9,7 +9,6 @@ export class FileSystem {
         let _root,
         
             _getFileWithRelPath = (file, pathList, resolve) => {
-                console.log(file?.getName(), pathList);
                 if (!pathList?.length) {
                     if (resolve && file?.getType() === LINK)
                         return _getFileFromLink(file, null, true);

@@ -11,14 +11,11 @@ const FS_IMPORT = [
             {
                 "type": "<<data>>",
                 "name": "cat",
-                "content": `const file = FS.getFileFromPath(ARGS[1], true);
-if (!file) {
-    SHELL.error(ARGS[1] + ': does not exist');
-    return;
-}
+                "content": `const file = SHELL.resolveFile(ARGS[1]);
+if (!file) return;
 
-if (file.getType().indexOf('<<folder>>') > -1) {
-    SHELL.error(ARGS[1] + ': is a folder');
+if (file.getType() === '<<folder>>') {
+    SHELL.error(ARGS[1] + ': is a directory');
     return;
 }
 SHELL.print(file.getContent());`
@@ -48,6 +45,11 @@ window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); 
                 "type": "<<data>>",
                 "name": "welcome",
                 "content": `SHELL.print(util.welcome_str);`
+            },
+            {
+                "type": "<<data>>",
+                "name": "errtest",
+                "content": `SHELL.nofunction();`
             },
         ]
     },

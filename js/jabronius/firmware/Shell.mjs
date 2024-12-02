@@ -35,22 +35,28 @@ export class Shell {
                 return { nav: nav, add: add, setLvl: setLvl };
             })(),
 
-            _getDir = (path) => {
+            _resolveFile = (path) => {
                 let absPath;
                 if (path?.startsWith('/')) {
                     absPath = path;
                 } else {
                     absPath = _dirPath + (path ? `/${path}` : '');
                 }
-                return _verifyDir(_filesys.getFileFromPath(absPath, true), path);
+                return _filesys.getFileFromPath(absPath, true);
             },
 
-            _verifyDir = (file, path) => {
+            _verifyFile = (file, path) => {
                 if (!file) {
-                    this.error(`${path}: path not found`);
+                    this.error(`${path}: file not found`);
                     return null;
                 }
                 
+                return file;
+            },
+
+            _verifyDir = (file, path) => {
+                if (!_verifyFile(file, path)) return null;
+
                 if (file.getType() !== FLDR) {
                     this.error(`${file.getName()}: not a directory`);
                     return null;
@@ -66,7 +72,7 @@ export class Shell {
             _commands = {
                 cd: (args) => {
                     let path = args[1],
-                        file = _getDir(path);
+                        file = this.resolveDir(path);
 
                     if (!file) return false;
         
@@ -75,7 +81,7 @@ export class Shell {
                 },
                 ls: (args) => {
                     let path = args[1] ?? '.',
-                        folder = _getDir(path);
+                        folder = this.resolveDir(path);
 
                     if (!folder) return false;
 
@@ -204,7 +210,10 @@ export class Shell {
             _buffer = '';
             _fireFrameUpdated();
         };
-        
+
+        this.resolveFile = (path) => _verifyFile(_resolveFile(path), path);
+        this.resolveDir = (path) => _verifyDir(_resolveFile(path), path);
+
         ////// Initialize /////////////////
     }
 }
