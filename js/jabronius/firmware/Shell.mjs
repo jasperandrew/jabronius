@@ -1,11 +1,13 @@
 import { ModCtrl } from "../hardware/Keyboard.mjs";
 import { parseArgs } from "../System.mjs";
+import { FLDR } from "./struct/JFile.mjs";
 
 export class Shell {
     constructor(_sys, _dirPath='/') {
         ////// Private Fields /////////////////
-        let _printing = false, _print_queue = [], _print_delay = true,
-            _buffer = '', _prompt = '',
+        let _filesys = _sys.getFileSys(),
+            _printing = false, _print_queue = [], _print_delay = true,
+            _buffer = '', _prompt = '', _prompt_char = '$',
 
             _history = (() => {
                 let _lvl = 0, _list = [], _curr = '',
@@ -32,17 +34,15 @@ export class Shell {
     
                 return { nav: nav, add: add, setLvl: setLvl };
             })(),
-    
-            _outputFrame = (onlyPrompt=false) => {
-                const frameBuffer = (!onlyPrompt ? _buffer : '') + '> ' + _prompt;
-                _sys.pushFrame(frameBuffer, !onlyPrompt);
-            },
 
-            _getDir = () => _verifyDir(_sys.getFileSys().getFileFromPath(_dirPath), _dirPath),
-
-            _getRelDir = (relPath) => {
-                const absPath = _dirPath + (relPath ? `/${relPath}` : '');
-                return _verifyDir(_sys.getFileSys().getFileFromPath(absPath, true), relPath);
+            _getDir = (path) => {
+                let absPath;
+                if (path?.startsWith('/')) {
+                    absPath = path;
+                } else {
+                    absPath = _dirPath + (path ? `/${path}` : '');
+                }
+                return _verifyDir(_filesys.getFileFromPath(absPath, true), path);
             },
 
             _verifyDir = (file, path) => {
@@ -51,7 +51,7 @@ export class Shell {
                     return null;
                 }
                 
-                if (file.getType().search('fldr') === -1) {
+                if (file.getType() !== FLDR) {
                     this.error(`${file.getName()}: not a directory`);
                     return null;
                 }
@@ -59,28 +59,32 @@ export class Shell {
                 return file;
             },
 
+            _fireFrameUpdated = (promptOnly) => {
+                _sys.onFrameUpdated(promptOnly ? 1 : 0);
+            },
+
             _commands = {
                 cd: (args) => {
-                    let relPath = args[1],
-                        file = _getRelDir(relPath);
+                    let path = args[1],
+                        file = _getDir(path);
 
                     if (!file) return false;
         
-                    _dirPath = file.getPath();
+                    _dirPath = _filesys.getPath(file);
                     return true;
                 },
                 ls: (args) => {
-                    let relPath = args[1], folder;
-                    if (relPath) folder = _getRelDir(relPath);
-                    else folder = _getDir();
+                    let path = args[1] ?? '.',
+                        folder = _getDir(path);
 
                     if (!folder) return false;
 
-                    const list = folder.getContent();
-                    this.print(
-                        Object.keys(list)
-                            .toSorted((a,b) => a.localeCompare(b))
-                            .map(name => list[name].toString()));
+                    const list = folder.getContent(),
+                        names = Object.keys(list).map(name => list[name].toString());
+                    names.push('.');
+                    if (!folder.isRoot()) names.push('..');
+
+                    this.print(names.toSorted((a,b) => a.localeCompare(b)));
                 },
                 clear: () => this.clearBuffer(),
                 echo: (args) => {
@@ -128,12 +132,11 @@ export class Shell {
                         queue.unshift(split[i]);
                 }
 
-                if (newline && out === '') out = ' '; // fix for visual glitch with <br>
                 window.setTimeout(() => {
                     doPrint();
                 }, _print_delay ? 17 : 0);
                 _buffer += out + (newline ? '\n' : '');
-                _outputFrame();
+                _fireFrameUpdated();
             }
 
             _print_queue.push(input);
@@ -148,7 +151,7 @@ export class Shell {
             if (signal.char) {
                 _prompt += signal.char;
                 _history.setLvl(0);
-                _outputFrame(true);
+                _fireFrameUpdated(true);
                 return;
             }
     
@@ -166,16 +169,16 @@ export class Shell {
                     }
                 default:
             }
-            _outputFrame(true);
+            _fireFrameUpdated(true);
         };
 
         this.submit = (argStr) => {
             if (!argStr) {
-                argStr = _prompt;
+                argStr = _prompt.trim();
                 _prompt = '';
             }
 
-            this.print('> ' + argStr);
+            this.print(_prompt_char + ' ' + argStr);
 
             if (/\S/.test(argStr)) {
                 _history.add(argStr);
@@ -191,10 +194,16 @@ export class Shell {
             }
         };
 
+        this.getFrameBuffer = () => {
+            let buf = [..._buffer.split('\n')];
+            buf[buf.length-1] += _prompt_char + ' ' + _prompt;
+            return buf;
+        };
+
         this.clearBuffer = () => {
             _buffer = '';
-            _outputFrame();
-        }
+            _fireFrameUpdated();
+        };
         
         ////// Initialize /////////////////
     }

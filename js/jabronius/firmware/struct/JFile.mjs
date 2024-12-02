@@ -1,5 +1,5 @@
 export class JFile {
-    constructor(_name, _type, _content) {
+    constructor(_name, _content, _type=DATA) {
         // Private Fields /////////////////
         let _parent = null;
 
@@ -14,15 +14,9 @@ export class JFile {
         this.setContent = (d) => { _content = d; };
 
         this.toString = () => `${_name}*`;
-        this.getPath = () => {
-            let p = _parent,
-                s = `/${_name}`;
-            if(!p) return 'err';
-            while(p.getType() !== 'fldr_root'){
-                s = `/${p.getName() + s}`;
-                p = p.getParent();
-            }
-            return s;
-        };
     }
 }
+
+export const FLDR = '<<folder>>';
+export const DATA = '<<data>>';
+export const LINK = '<<link>>';

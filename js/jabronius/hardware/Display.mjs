@@ -24,7 +24,7 @@ export class Display {
             if (reversed) textRows.reverse();
             for (let i = 0; i < _rows.length; i++) {
                 let row = textRows[i];
-                if (!row) {
+                if (row !== '' && !row) {
                     if (clear) row = '';
                     else continue;
                 }

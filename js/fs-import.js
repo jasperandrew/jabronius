@@ -1,87 +1,87 @@
 const FS_IMPORT = [
     {
-        "type": "fldr",
+        "type": "<<folder>>",
         "name": "bin",
-        "contents": [
+        "content": [
             {
-                "type": "data",
+                "type": "<<data>>",
                 "name": "about",
-                "data": `SHELL.print('Hey, I\\'m Jasper. todo');`
+                "content": `SHELL.print('Hey, I\\'m Jasper. todo');`
             },
             {
-                "type": "data",
+                "type": "<<data>>",
                 "name": "cat",
-                "data": `const file = FS.getFileFromPath(ARGS[1], true);
+                "content": `const file = FS.getFileFromPath(ARGS[1], true);
 if (!file) {
-    SHELL.error(args[1] + ': does not exist');
+    SHELL.error(ARGS[1] + ': does not exist');
     return;
 }
 
-if (file.getType().indexOf('fldr') > -1) {
-    SHELL.error(args[1] + ': is a folder');
+if (file.getType().indexOf('<<folder>>') > -1) {
+    SHELL.error(ARGS[1] + ': is a folder');
     return;
 }
 SHELL.print(file.getContent());`
             },
             {
-                "type": "data",
+                "type": "<<data>>",
                 "name": "contact",
-                "data": `SHELL.print('✉ <a href="mailto:jasper.q.andrew@gmail.com">jasper.q.andrew@gmail.com</a>');`
+                "content": `SHELL.print('✉ <a href="mailto:jasper.q.andrew@gmail.com">jasper.q.andrew@gmail.com</a>');`
             },
             {
-                "type": "link",
+                "type": "<<link>>",
                 "name": "cv",
-                "path": "/bin/resume"
+                "content": "/bin/resume"
             },
             {
-                "type": "data",
+                "type": "<<data>>",
                 "name": "help",
-                "data": `SHELL.error(args[0] + ': program not implemented');`
+                "content": `SHELL.error(ARGS[0] + ': program not implemented');`
             },
             {
-                "type": "data",
+                "type": "<<data>>",
                 "name": "resume",
-                "data": `SHELL.print('opening in new window...');
+                "content": `SHELL.print('opening in new window...');
 window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); }, 500);`
             },
             {
-                "type": "data",
+                "type": "<<data>>",
                 "name": "welcome",
-                "data": `SHELL.print(util.welcome_str);`
+                "content": `SHELL.print(util.welcome_str);`
             },
         ]
     },
     {
-        "type": "fldr",
+        "type": "<<folder>>",
         "name": "home",
-        "contents": [
+        "content": [
             {
-                "type": "fldr",
+                "type": "<<folder>>",
                 "name": "jasper",
-                "contents": [
+                "content": [
                     {
-                        "type": "data",
+                        "type": "<<data>>",
                         "name": "test",
-                        "data": "blah"
+                        "content": "blah"
                     },
                     {
-                        "type": "link",
+                        "type": "<<link>>",
                         "name": "lonk",
-                        "path": "/home/jasper/fodor/lunk"
+                        "content": "/home/jasper/fodor/lunk"
                     },
                     {
-                        "type": "fldr",
+                        "type": "<<folder>>",
                         "name": "fodor",
-                        "contents": [
+                        "content": [
                             {
-                                "type": "data",
+                                "type": "<<data>>",
                                 "name": "toast",
-                                "data": "toasty"
+                                "content": "toasty"
                             },
                             {
-                                "type": "link",
+                                "type": "<<link>>",
                                 "name": "lunk",
-                                "path": "/home"
+                                "content": "/home"
                             }        
                         ]
                     }        
