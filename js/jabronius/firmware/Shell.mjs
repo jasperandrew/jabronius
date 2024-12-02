@@ -140,7 +140,7 @@ export class Shell {
 
                 window.setTimeout(() => {
                     doPrint();
-                }, _print_delay ? 17 : 0);
+                }, _print_delay ? 7 : 0);
                 _buffer += out + (newline ? '\n' : '');
                 _fireFrameUpdated();
             }

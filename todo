@@ -1,9 +1,7 @@
 - path/other vars
-- broken links
+- broken link error reporting
 - file deletion (destroy file)
-- validate file names and such
 - tab completion
-- links .. path behavior
 
 - commands:
     - help
@@ -23,8 +21,10 @@
     - drive: store/retrieve data
     - keyboard: send inputs
     - processor: read, write, execute
+    - file system: maintain root, resolve files/paths
     - shell: abstract/interact with file system
     - system: communicate between components
 
-- fix cd to root issue
 - add blinking caret to prompt
+- prompt newline support
+- save drive/filesystem state in browser
