@@ -159,7 +159,7 @@ export class Shell {
                 return;
             }
 
-            _sys.execute(file.getContent(), args);
+            _sys.execScript(file.getContent(), args);
         };
 
 

@@ -2,7 +2,7 @@ import { Shell } from './firmware/Shell.mjs';
 import { Keyboard } from './hardware/Keyboard.mjs';
 import { Display } from './hardware/Display.mjs';
 import { FileSystem } from './firmware/FileSystem.mjs';
-import { FLDR } from './firmware/struct/JFile.mjs';
+import { Processor } from './hardware/Processor.mjs';
 
 export class System {
     constructor() {
@@ -17,9 +17,10 @@ export class System {
 
         const _display = new Display();
         const _keyboard = new Keyboard(this);
-        // const _cpu, _drive;
         const _filesys = new FileSystem();
         const _shell = new Shell(this, _filesys, '/home/jasper');
+        const _cpu = new Processor(this, _shell, _filesys);
+        // const _drive;
 
         const _importSettingsFromURL = () => {
             const url = window.location.href,
@@ -70,11 +71,11 @@ export class System {
             return true;
         };
 
-        const _out = (str) => {
+        const _out = (tag, str) => {
             _shell.print(str);
         };
 
-        const _err = (str) => {
+        const _err = (tag, str) => {
             _shell.error(str);
         };
 
@@ -82,7 +83,7 @@ export class System {
         ////// Public Fields //////////////////
 
         this.getShell = () => _shell;
-        
+
         this.onKeySignal = (signal) => {
             _shell.onKeySignal(signal);
         };
@@ -95,22 +96,8 @@ export class System {
             _display.displayFrame(buf, !lines);
         };
 
-        this.execute = (script, args) => {        
-            try {
-                const f = new Function(['SYS','SHELL','FS','ARGS','IN','OUT','ERR'], script);
-                return f(this, _shell, _filesys, args, null, _out, _err);
-            } catch (e) {
-                let msg = e.name;
-                if (e.lineNumber) {
-                    msg += ` (${e.lineNumber}`;
-                    if (e.columnNumber) msg += `,${e.columnNumber}`;
-                    msg += ')';
-                }
-                msg += `: ${e.message}`;
-                _shell.error(msg);
-                console.error(e);
-                return false;
-            }
+        this.execScript = (script, args) => {        
+            _cpu.execute(script, args, null, _out, _err);
         };
 
         this.startup = (settings) => {
