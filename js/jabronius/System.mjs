@@ -30,7 +30,7 @@ export class System {
                 let p = pair.split('=', 2);
                 let name = decodeURIComponent(p[0]).trim(), // setting name
                     val = decodeURIComponent(p[1]); // setting value
-                let type = util.typeof(_settings[name]);
+                let type = typename(_settings[name]);
 
                 switch (type) {
                     case 'Boolean': {
@@ -77,7 +77,7 @@ export class System {
         this.getShell = () => _shell;
 
         this.run = (argstr, dir=_filesys.getFileFromPath('/bin')) => {        
-            if (util.typeof(argstr) !== 'String') {
+            if (typename(argstr) !== 'String') {
                 console.error('Arguments must be a string');
                 return false;
             }

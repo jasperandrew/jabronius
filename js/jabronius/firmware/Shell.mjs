@@ -112,7 +112,7 @@ export class Shell {
                     if (_print_queue.length > 0) {
                         let p;
                         [p, ..._print_queue] = _print_queue;
-                        if(util.typeof(p) === 'Array') queue = p;
+                        if(typename(p) === 'Array') queue = p;
                         else queue = [p];
                     } else {
                         _printing = false;

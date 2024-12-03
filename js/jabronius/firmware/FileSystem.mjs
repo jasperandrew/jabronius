@@ -116,3 +116,117 @@ export class FileSystem {
         _import(_root, FS_IMPORT);
     }
 }
+
+const FS_IMPORT = [
+    {
+        "type": "<<folder>>",
+        "name": "bin",
+        "content": [
+            {
+                "type": "<<data>>",
+                "name": "about",
+                "content": `SHELL.print('Hey, I\\'m Jasper. todo');`
+            },
+            {
+                "type": "<<data>>",
+                "name": "cat",
+                "content": `const file = SHELL.resolveFile(ARGS[1]);
+if (!file) return;
+
+if (file.getType() === '<<folder>>') {
+    SHELL.error(ARGS[1] + ': is a directory');
+    return;
+}
+SHELL.print(file.getContent());`
+            },
+            {
+                "type": "<<data>>",
+                "name": "contact",
+                "content": `SHELL.print('✉ <a href="mailto:jasper.q.andrew@gmail.com">jasper.q.andrew@gmail.com</a>');`
+            },
+            {
+                "type": "<<link>>",
+                "name": "cv",
+                "content": "/bin/resume"
+            },
+            {
+                "type": "<<data>>",
+                "name": "help",
+                "content": `SHELL.error(ARGS[0] + ': program not implemented');`
+            },
+            {
+                "type": "<<data>>",
+                "name": "resume",
+                "content": `SHELL.print('opening in new window...');
+window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); }, 500);`
+            },
+            {
+                "type": "<<data>>",
+                "name": "welcome",
+                "content": `SHELL.print(
+\`                         W E L C O M E   T O
+
+
+          _       ____  _____   ____  _   _ _____ _    _  _____
+         | |     |  _ \\\\|  __ \\\\ / __ \\\\| \\\\ | |_   _| |  | |/ ____|
+         | | __ _| |_) | |__) | |  | |  \\\\| | | | | |  | | (___
+     _   | |/ _\\\` |  _ <|  _  /| |  | | . \\\` | | | | |  | |\\\\___ \\\\
+    | |__| | (_| | |_) | | \\\\ \\\\| |__| | |\\\\  |_| |_| |__| |____) |
+     \\\\____/ \\\\__,_|____/|_|  \\\\_\\\\\\\\____/|_| \\\\_|_____|\\\\____/|_____/
+
+
+                                 The
+                           <b>Ja</b>vascript-<b>B</b>ased
+              <b>R</b>eally <b>O</b>versimplified and <b>N</b>ot-very-useful
+                      <b>I</b>mitation of a <b>U</b>nix <b>S</b>ystem
+
+
+
+\`);`
+            },
+            {
+                "type": "<<data>>",
+                "name": "errtest",
+                "content": `SHELL.nofunction();`
+            },
+        ]
+    },
+    {
+        "type": "<<folder>>",
+        "name": "home",
+        "content": [
+            {
+                "type": "<<folder>>",
+                "name": "jasper",
+                "content": [
+                    {
+                        "type": "<<data>>",
+                        "name": "test",
+                        "content": "blah"
+                    },
+                    {
+                        "type": "<<link>>",
+                        "name": "lonk",
+                        "content": "/home/jasper/fodor/lunk"
+                    },
+                    {
+                        "type": "<<folder>>",
+                        "name": "fodor",
+                        "content": [
+                            {
+                                "type": "<<data>>",
+                                "name": "toast",
+                                "content": "toasty"
+                            },
+                            {
+                                "type": "<<link>>",
+                                "name": "lunk",
+                                "content": "/home"
+                            }        
+                        ]
+                    }        
+                ]
+            }
+        ]
+    }
+];
