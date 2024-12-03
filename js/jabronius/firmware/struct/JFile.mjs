@@ -17,6 +17,6 @@ export class JFile {
     }
 }
 
-export const FLDR = '<<folder>>';
-export const DATA = '<<data>>';
-export const LINK = '<<link>>';
+export const FLDR = '__folder__';
+export const DATA = '__data__';
+export const LINK = '__link__';

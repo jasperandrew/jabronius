@@ -81,6 +81,8 @@ export class System {
 
         ////// Public Fields //////////////////
 
+        this.getShell = () => _shell;
+        
         this.onKeySignal = (signal) => {
             _shell.onKeySignal(signal);
         };
@@ -93,35 +95,14 @@ export class System {
             _display.displayFrame(buf, !lines);
         };
 
-        this.run = (argstr, dir=_filesys.getFileFromPath('/scr')) => {        
-            if (typename(argstr) !== 'String') {
-                console.error('Arguments must be a string');
-                return false;
-            }
-
-            const args = parseArgs(argstr),
-                name = args[0],
-                cmdPath = _filesys.getPath(dir) + `/${name}`;
-
-            let file = _filesys.getFileFromPath(cmdPath, true);
-
-            if (!file) {
-                _shell.error(`${name}: command not found`);
-                return false;
-            }
-            
-            if (file.getType() === FLDR) {
-                _shell.error(`${name}: is a directory`);
-                return false;
-            }
-
+        this.execute = (script, args) => {        
             try {
-                const f = new Function(['SYS','SHELL','FS','ARGS','IN','OUT','ERR'], file.getContent());
+                const f = new Function(['SYS','SHELL','FS','ARGS','IN','OUT','ERR'], script);
                 return f(this, _shell, _filesys, args, null, _out, _err);
             } catch (e) {
                 let msg = e.name;
                 if (e.lineNumber) {
-                    msg += ` (${e.lineNumber}`
+                    msg += ` (${e.lineNumber}`;
                     if (e.columnNumber) msg += `,${e.columnNumber}`;
                     msg += ')';
                 }
@@ -134,8 +115,8 @@ export class System {
 
         this.startup = (settings) => {
             _shell.clearBuffer();
-            if (settings.welcome) this.run('welcome');
-            if (settings.cmd) settings.cmd.forEach(c => this.run(c));	
+            if (settings.welcome) _shell.run('welcome');
+            if (settings.cmd) settings.cmd.forEach(c => _shell.run(c));	
         };
 
 
@@ -146,38 +127,4 @@ export class System {
 
         this.startup(_settings);
     }
-}
-
-export const parseArgs = (str) => {
-    let delims = ['"', '\''],
-        args = [],
-        start = 0, i = 0;
-
-    while (i < str.length) {
-        let arg = '';
-
-        if (i >= str.length-1) { // e "u c" f
-            arg = str.slice(start);
-        } else if (str[i] === ' ') {
-            arg = str.slice(start, i);
-            start = i+1;
-        } else if (delims.indexOf(str[i]) > -1) {
-            let d = str[i++];
-            start = i;
-            while(str[i] !== d){
-                i++;
-                if(i >= str.length){
-                    _shell.error(`parse: missing delimiter (${d})`);
-                    return null;
-                }
-            }
-            arg = str.slice(start, i);
-            start = i+1;
-        }
-
-        if (arg !== '' && arg !== ' ') args.push(arg);
-        i++;
-    }
-    
-    return args;
 }

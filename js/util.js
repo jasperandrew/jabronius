@@ -1,1 +1,1 @@
-const typename = (o) => o ? o.constructor.name : o;
+const typename = (o) => (o === '' || o) ? o.constructor.name : o;

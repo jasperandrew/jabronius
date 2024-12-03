@@ -1,5 +1,4 @@
 import { ModCtrl } from "../hardware/Keyboard.mjs";
-import { parseArgs } from "../System.mjs";
 import { FLDR } from "./struct/JFile.mjs";
 
 export class Shell {
@@ -95,7 +94,7 @@ export class Shell {
                 names.push('.');
                 if (!folder.isRoot()) names.push('..');
 
-                this.print(names.toSorted((a,b) => a.localeCompare(b)));
+                this.print(names.toSorted((a,b) => a.localeCompare(b)).join('\n'));
             },
             clear: () => this.clearBuffer(),
             echo: (args) => {
@@ -103,59 +102,77 @@ export class Shell {
                 this.print(args.join(' '));
             },
             pwd: () => this.print(_dirPath),
-            rm: (args) => this.error(args[0] + ': program not implemented'),
         };
+
+        const _submitPrompt = () => {
+            const argstr = _prompt.trim();
+            _prompt = '';
+            this.print(_prompt_char + ' ' + argstr);
+            this.run(argstr);
+        };
+
+        const _printFromQueue = () => {
+            _printing = true;
+            if (_print_queue.length === 0) {
+                _printing = false;
+                return;
+            }
+
+            let next; [next, ..._print_queue] = _print_queue;
+            if (!next) next = '';
+            if (typename(next) !== 'String') next = next.toString();
+            
+            let split = next.split(/[\n\r]/);
+            if (next !== split[0]) {
+                [next, ...split] = split;
+                for (let i = split.length-1; i >= 0; i--)
+                    _print_queue.unshift(split[i]);
+            }
+
+            _buffer += next + '\n';
+            _fireFrameUpdated();
+
+            window.setTimeout(() => _printFromQueue(), _print_delay ? 7 : 0);
+        };
+
+        const _runScript = (argstr, dir='/scr') => {
+            if (typename(argstr) !== 'String') {
+                console.error('Arguments must be a string');
+                return;
+            }
+
+            if (!/\S/.test(argstr)) return;
+
+            const args = parseArgs(argstr),
+                name = args[0],
+                cmdPath = dir + `/${name}`;
+
+            let file = _filesys.getFileFromPath(cmdPath, true);
+
+            if (!file) {
+                this.error(`${name}: command not found`);
+                return;
+            }
+            
+            if (file.getType() === FLDR) {
+                this.error(`${name}: is a directory`);
+                return;
+            }
+
+            _sys.execute(file.getContent(), args);
+        };
+
 
         ////// Public Fields //////////////////
         this.error = (msg) => {
             this.print('[!] ' + msg);
         };
 
-        this.print = (input='', newline=true) => {
-            function doPrint() {
-                if (queue.length === 0) {
-                    if (_print_queue.length > 0) {
-                        let p;
-                        [p, ..._print_queue] = _print_queue;
-                        if(typename(p) === 'Array') queue = p;
-                        else queue = [p];
-                    } else {
-                        _printing = false;
-                        return true;
-                    }
-                }
-
-                let out, split;
-                [out, ...queue] = queue;
-
-                if (out === null) {
-                    doPrint();
-                    return true;
-                }
-                
-                out = out.toString();
-                if (out === undefined) out = '<<ERR>>';
-
-                split = out.split(/[\n\r]/);
-                if (out !== split[0]) {
-                    [out, ...split] = split;
-                    for(let i = split.length-1; i >= 0; i--)
-                        queue.unshift(split[i]);
-                }
-
-                window.setTimeout(() => {
-                    doPrint();
-                }, _print_delay ? 7 : 0);
-                _buffer += out + (newline ? '\n' : '');
-                _fireFrameUpdated();
-            }
-
+        this.print = (input='') => {
             _print_queue.push(input);
-            if (_printing) return true;
+            if (_printing) return;
 
-            let queue = [];
-            _printing = true;
-            doPrint();
+            _printFromQueue();
         };
 
         this.onKeySignal = (signal) => {
@@ -167,7 +184,7 @@ export class Shell {
             }
     
             switch (signal.code) {
-                case 'Enter': this.submit(); return;
+                case 'Enter': _submitPrompt(); return;
                 case 'ArrowUp':
                 case 'ArrowDown': _history.nav(signal.code); break;
                 case 'Backspace':
@@ -183,25 +200,18 @@ export class Shell {
             _fireFrameUpdated(true);
         };
 
-        this.submit = (argStr) => {
-            if (!argStr) {
-                argStr = _prompt.trim();
-                _prompt = '';
-            }
+        this.run = (argstr) => {
+            if (!/\S/.test(argstr)) return;
 
-            this.print(_prompt_char + ' ' + argStr);
+            _history.add(argstr);
 
-            if (/\S/.test(argStr)) {
-                _history.add(argStr);
+            const args = parseArgs(argstr),
+                name = args[0];
 
-                const args = parseArgs(argStr),
-                    name = args[0];
-
-                if (Object.keys(_commands).includes(name)) {
-                    _commands[name](args);
-                } else {
-                    _sys.run(argStr);
-                }
+            if (Object.keys(_commands).includes(name)) {
+                _commands[name](args);
+            } else {
+                _runScript(argstr);
             }
         };
 
@@ -219,4 +229,38 @@ export class Shell {
         this.resolveFile = (path) => _verifyFile(_resolveFile(path), path);
         this.resolveDir = (path) => _verifyDir(_resolveFile(path), path);
     }
+}
+
+export const parseArgs = (str) => {
+    let delims = ['"', '\''],
+        args = [],
+        start = 0, i = 0;
+
+    while (i < str.length) {
+        let arg = '';
+
+        if (i >= str.length-1) { // e "u c" f
+            arg = str.slice(start);
+        } else if (str[i] === ' ') {
+            arg = str.slice(start, i);
+            start = i+1;
+        } else if (delims.indexOf(str[i]) > -1) {
+            let d = str[i++];
+            start = i;
+            while(str[i] !== d){
+                i++;
+                if(i >= str.length){
+                    console.error(`parse: missing delimiter (${d})`);
+                    return null;
+                }
+            }
+            arg = str.slice(start, i);
+            start = i+1;
+        }
+
+        if (arg !== '' && arg !== ' ') args.push(arg);
+        i++;
+    }
+    
+    return args;
 }

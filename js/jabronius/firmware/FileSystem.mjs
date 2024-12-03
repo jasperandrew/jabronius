@@ -127,49 +127,49 @@ export class FileSystem {
 
 const FS_IMPORT = [
     {
-        "type": "<<folder>>",
+        "type": "__folder__",
         "name": "scr",
         "content": [
             {
-                "type": "<<data>>",
+                "type": "__data__",
                 "name": "about",
                 "content": `OUT('Hey, I\\'m Jasper. todo');`
             },
             {
-                "type": "<<data>>",
+                "type": "__data__",
                 "name": "cat",
                 "content": `const file = SHELL.resolveFile(ARGS[1]);
 if (!file) return;
 
-if (file.getType() === '<<folder>>') {
+if (file.getType() === '__folder__') {
     ERR(ARGS[1] + ': is a directory');
     return;
 }
 OUT(file.getContent());`
             },
             {
-                "type": "<<data>>",
+                "type": "__data__",
                 "name": "contact",
                 "content": `OUT('EMAIL: <a href="mailto:jasper.q.andrew@gmail.com">jasper.q.andrew@gmail.com</a>');`
             },
             {
-                "type": "<<link>>",
+                "type": "__link__",
                 "name": "cv",
                 "content": "/scr/resume"
             },
             {
-                "type": "<<data>>",
+                "type": "__data__",
                 "name": "help",
                 "content": `ERR(ARGS[0] + ': program not implemented');`
             },
             {
-                "type": "<<data>>",
+                "type": "__data__",
                 "name": "resume",
                 "content": `OUT('opening in new window...');
 window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); }, 500);`
             },
             {
-                "type": "<<data>>",
+                "type": "__data__",
                 "name": "welcome",
                 "content": `OUT(
 \`                         W E L C O M E   T O
@@ -193,41 +193,41 @@ window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); 
 \`);`
             },
             {
-                "type": "<<data>>",
+                "type": "__data__",
                 "name": "errtest",
                 "content": `SHELL.nofunction();`
             },
         ]
     },
     {
-        "type": "<<folder>>",
+        "type": "__folder__",
         "name": "home",
         "content": [
             {
-                "type": "<<folder>>",
+                "type": "__folder__",
                 "name": "jasper",
                 "content": [
                     {
-                        "type": "<<data>>",
+                        "type": "__data__",
                         "name": "test",
                         "content": "blah"
                     },
                     {
-                        "type": "<<link>>",
+                        "type": "__link__",
                         "name": "lonk",
                         "content": "/home/jasper/fodor/lunk"
                     },
                     {
-                        "type": "<<folder>>",
+                        "type": "__folder__",
                         "name": "fodor",
                         "content": [
                             {
-                                "type": "<<data>>",
+                                "type": "__data__",
                                 "name": "toast",
                                 "content": "toasty"
                             },
                             {
-                                "type": "<<link>>",
+                                "type": "__link__",
                                 "name": "lunk",
                                 "content": "/home"
                             }        

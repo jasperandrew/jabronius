@@ -1,17 +1,17 @@
 FILE = DATA | FOLD | LINK
 
 DATA = {
-    type: "<<data>>",
+    type: "__data__",
     name: NAMESTR,
     data: string(any)
 }
 FOLD = {
-    type: "<<folder>>",
+    type: "__folder__",
     name: NAMESTR,
     contents: [ FILE ]
 }
 LINK = {
-    type: "<<link>>",
+    type: "__link__",
     name: NAMESTR,
     path: /NAMESTR/NAMESTR...
 }
