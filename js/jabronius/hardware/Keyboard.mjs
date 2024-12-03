@@ -1,9 +1,13 @@
 export class Keyboard {
     constructor(_sys) {
+        
         ////// Private Fields /////////////////
-        let _caps, _passwd, _key_elems = {},
 
-        _keyOn = (code) => {
+        let _caps = false;
+        let _passwd = false;
+        let _key_elems = {};
+
+        const _keyOn = (code) => {
             if (_key_elems[code] === undefined) {
                 const key = document.querySelector('.key.' + code);
                 if(!key) _key_elems[code] = null;
@@ -11,23 +15,23 @@ export class Keyboard {
             }
             const el = _key_elems[code];
             if (el) el.classList.add('on');
-        },
+        };
 
-        _keyOff = (code) => {
+        const _keyOff = (code) => {
             const el = _key_elems[code];
             if (el) el.classList.remove('on');
-        },
+        };
 
-        _allOff = () => {
+        const _allOff = () => {
             document.querySelectorAll('.key').forEach(key => key.classList.remove('on'));
-        },
+        };
 
-        _capsToggle = () => {
+        const _capsToggle = () => {
             _caps = !_caps;
             _key_elems['CapsLock'].classList.toggle('locked');
-        },
+        };
 
-        _keyDown = (e) => {
+        const _keyDown = (e) => {
             const event = window.event ? window.event : e;
 
             _sys.onKeySignal(KeyInputSignal.fromKeyboardEvent(event));
@@ -45,15 +49,15 @@ export class Keyboard {
 
             // if(!_computer.isOn() && event.code !== undefined) return false;
             // if(['ArrowUp','ArrowDown','Tab'].indexOf(event.code) > -1) event.preventDefault();
-        },
+        };
 
-        _keyUp = (e) => {
+        const _keyUp = (e) => {
             const event = window.event ? window.event : e;
             _keyOff(event.code);
         };
 
+
         ////// Initialize /////////////////////
-        _passwd = false;
 
         document.onkeydown = _keyDown;
         document.onkeyup = _keyUp;

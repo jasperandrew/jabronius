@@ -3,103 +3,108 @@ import { parseArgs } from "../System.mjs";
 import { FLDR } from "./struct/JFile.mjs";
 
 export class Shell {
-    constructor(_sys, _dirPath='/') {
-        ////// Private Fields /////////////////
-        let _filesys = _sys.getFileSys(),
-            _printing = false, _print_queue = [], _print_delay = true,
-            _buffer = '', _prompt = '', _prompt_char = '$',
-
-            _history = (() => {
-                let _lvl = 0, _list = [], _curr = '',
-                
-                nav = (key) => {
-                    if (_lvl === 0) _curr = _prompt;
-    
-                    if (key === 'ArrowUp') {
-                        _lvl += (_lvl > _list.length-1 ? 0 : 1);
-                    } else if (key === 'ArrowDown') {
-                        _lvl += (_lvl < 0 ? 0 : -1);
-                    }
-                
-                    if (_lvl > 0) _prompt = _list[_lvl-1];
-                    else _prompt = _curr;    
-                },
-                
-                add = (cmd) => {
-                    _lvl = 0;
-                    if (_list[0] !== cmd) _list.unshift(cmd);
-                },
-                
-                setLvl = (n) => { _lvl = n; };
-    
-                return { nav: nav, add: add, setLvl: setLvl };
-            })(),
-
-            _resolveFile = (path) => {
-                let absPath;
-                if (path?.startsWith('/')) {
-                    absPath = path;
-                } else {
-                    absPath = _dirPath + (path ? `/${path}` : '');
-                }
-                return _filesys.getFileFromPath(absPath, true);
-            },
-
-            _verifyFile = (file, path) => {
-                if (!file) {
-                    this.error(`${path}: file not found`);
-                    return null;
-                }
-                
-                return file;
-            },
-
-            _verifyDir = (file, path) => {
-                if (!_verifyFile(file, path)) return null;
-
-                if (file.getType() !== FLDR) {
-                    this.error(`${file.getName()}: not a directory`);
-                    return null;
-                }
-
-                return file;
-            },
-
-            _fireFrameUpdated = (promptOnly) => {
-                _sys.onFrameUpdated(promptOnly ? 1 : 0);
-            },
-
-            _commands = {
-                cd: (args) => {
-                    let path = args[1],
-                        file = this.resolveDir(path);
-
-                    if (!file) return false;
+    constructor(_sys, _filesys, _dirPath='/') {
         
-                    _dirPath = _filesys.getPath(file);
-                    return true;
-                },
-                ls: (args) => {
-                    let path = args[1] ?? '.',
-                        folder = this.resolveDir(path);
+        ////// Private Fields /////////////////
 
-                    if (!folder) return false;
+        let _printing = false;
+        let _print_queue = [];
+        let _print_delay = true;
+        let _buffer = '';
+        let _prompt = '';
+        let _prompt_char = '$';
 
-                    const list = folder.getContent(),
-                        names = Object.keys(list).map(name => list[name].toString());
-                    names.push('.');
-                    if (!folder.isRoot()) names.push('..');
+        const _history = (() => {
+            let _lvl = 0, _list = [], _curr = '',
+            
+            nav = (key) => {
+                if (_lvl === 0) _curr = _prompt;
 
-                    this.print(names.toSorted((a,b) => a.localeCompare(b)));
-                },
-                clear: () => this.clearBuffer(),
-                echo: (args) => {
-                    args.shift();
-                    this.print(args.join(' '));
-                },
-                pwd: () => this.print(_dirPath),
-                rm: (args) => this.error(args[0] + ': program not implemented'),
-            };
+                if (key === 'ArrowUp') {
+                    _lvl += (_lvl > _list.length-1 ? 0 : 1);
+                } else if (key === 'ArrowDown') {
+                    _lvl += (_lvl < 0 ? 0 : -1);
+                }
+            
+                if (_lvl > 0) _prompt = _list[_lvl-1];
+                else _prompt = _curr;    
+            },
+            
+            add = (cmd) => {
+                _lvl = 0;
+                if (_list[0] !== cmd) _list.unshift(cmd);
+            },
+            
+            setLvl = (n) => { _lvl = n; };
+
+            return { nav: nav, add: add, setLvl: setLvl };
+        })();
+
+        const _resolveFile = (path) => {
+            let absPath;
+            if (path?.startsWith('/')) {
+                absPath = path;
+            } else {
+                absPath = _dirPath + (path ? `/${path}` : '');
+            }
+            return _filesys.getFileFromPath(absPath, true);
+        };
+
+        const _verifyFile = (file, path) => {
+            if (!file) {
+                this.error(`${path}: file not found`);
+                return null;
+            }
+            
+            return file;
+        };
+
+        const _verifyDir = (file, path) => {
+            if (!_verifyFile(file, path)) return null;
+
+            if (file.getType() !== FLDR) {
+                this.error(`${file.getName()}: not a directory`);
+                return null;
+            }
+
+            return file;
+        };
+
+        const _fireFrameUpdated = (promptOnly) => {
+            _sys.onFrameUpdated(promptOnly ? 1 : 0);
+        };
+
+        const _commands = {
+            cd: (args) => {
+                let path = args[1],
+                    file = this.resolveDir(path);
+
+                if (!file) return false;
+    
+                _dirPath = _filesys.getPath(file);
+                return true;
+            },
+            ls: (args) => {
+                let path = args[1] ?? '.',
+                    folder = this.resolveDir(path);
+
+                if (!folder) return false;
+
+                const list = folder.getContent(),
+                    names = Object.keys(list).map(name => list[name].toString());
+                names.push('.');
+                if (!folder.isRoot()) names.push('..');
+
+                this.print(names.toSorted((a,b) => a.localeCompare(b)));
+            },
+            clear: () => this.clearBuffer(),
+            echo: (args) => {
+                args.shift();
+                this.print(args.join(' '));
+            },
+            pwd: () => this.print(_dirPath),
+            rm: (args) => this.error(args[0] + ': program not implemented'),
+        };
 
         ////// Public Fields //////////////////
         this.error = (msg) => {
@@ -213,7 +218,5 @@ export class Shell {
 
         this.resolveFile = (path) => _verifyFile(_resolveFile(path), path);
         this.resolveDir = (path) => _verifyDir(_resolveFile(path), path);
-
-        ////// Initialize /////////////////
     }
 }

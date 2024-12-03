@@ -28,3 +28,4 @@
 - add blinking caret to prompt
 - prompt newline support
 - save drive/filesystem state in browser
+- mobile-friendly input

@@ -6,13 +6,22 @@ import { FLDR } from './firmware/struct/JFile.mjs';
 
 export class System {
     constructor() {
-        ////// Private Fields /////////////////
-        let _settings,
-            _display, _keyboard, _cpu, _drive,
-            _filesys, _shell;
 
-        ////// Public Fields //////////////////
-        this.importSettingsFromURL = () => {
+        ////// Private Fields /////////////////
+
+        let _settings = {
+            on: true,
+            welcome: true,
+            cmd: []
+        };
+
+        const _display = new Display();
+        const _keyboard = new Keyboard(this);
+        // const _cpu, _drive;
+        const _filesys = new FileSystem();
+        const _shell = new Shell(this, _filesys, '/home/jasper');
+
+        const _importSettingsFromURL = () => {
             const url = window.location.href,
                 start = url.indexOf('?') + 1;
 
@@ -61,6 +70,9 @@ export class System {
             return true;
         };
 
+
+        ////// Public Fields //////////////////
+
         this.onKeySignal = (signal) => {
             _shell.onKeySignal(signal);
         };
@@ -72,9 +84,6 @@ export class System {
             }
             _display.displayFrame(buf, !lines);
         };
-
-        this.getFileSys = () => _filesys;
-        this.getShell = () => _shell;
 
         this.run = (argstr, dir=_filesys.getFileFromPath('/bin')) => {        
             if (typename(argstr) !== 'String') {
@@ -99,7 +108,7 @@ export class System {
             }
 
             try {
-                const f = new Function(['SYS','SHELL','FS','ARGS'], file.getContent());
+                const f = new Function(['SYS','SHELL','FS','ARGS','IN','OUT','ERR'], file.getContent());
                 return f(this, _shell, _filesys, args);
             } catch (e) {
                 let msg = e.name;
@@ -121,27 +130,10 @@ export class System {
             if (settings.cmd) settings.cmd.forEach(c => this.run(c));	
         };
 
-        this.write = (data='', path, append=false) => {
-            // todo
-            return true;
-        };
-
+        
         ////// Initialize /////////////////////
-        _settings = {
-            on: true,
-            welcome: true,
-            cmd: []
-        };
 
-        _display = new Display();
-        _keyboard = new Keyboard(this);
-        // _cpu = new Processor();
-        // _drive = new Drive();
-
-        _filesys = new FileSystem();
-        _shell = new Shell(this, '/home/jasper');
-
-        this.importSettingsFromURL();
+        _importSettingsFromURL();
         if (_settings['on']) _display.togglePower();
 
         this.startup(_settings);
