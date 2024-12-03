@@ -70,6 +70,14 @@ export class System {
             return true;
         };
 
+        const _out = (str) => {
+            _shell.print(str);
+        };
+
+        const _err = (str) => {
+            _shell.error(str);
+        };
+
 
         ////// Public Fields //////////////////
 
@@ -77,7 +85,7 @@ export class System {
             _shell.onKeySignal(signal);
         };
 
-        this.onFrameUpdated = (lines) => {
+        this.updateFrame = (lines) => {
             let buf = _shell.getFrameBuffer();
             if (lines) {
                 buf = buf.slice(lines * -1);
@@ -109,7 +117,7 @@ export class System {
 
             try {
                 const f = new Function(['SYS','SHELL','FS','ARGS','IN','OUT','ERR'], file.getContent());
-                return f(this, _shell, _filesys, args);
+                return f(this, _shell, _filesys, args, null, _out, _err);
             } catch (e) {
                 let msg = e.name;
                 if (e.lineNumber) {
@@ -130,11 +138,11 @@ export class System {
             if (settings.cmd) settings.cmd.forEach(c => this.run(c));	
         };
 
-        
+
         ////// Initialize /////////////////////
 
         _importSettingsFromURL();
-        if (_settings['on']) _display.togglePower();
+        if (_settings.on) _display.togglePower();
 
         this.startup(_settings);
     }

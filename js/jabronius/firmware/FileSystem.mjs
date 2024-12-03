@@ -133,7 +133,7 @@ const FS_IMPORT = [
             {
                 "type": "<<data>>",
                 "name": "about",
-                "content": `SHELL.print('Hey, I\\'m Jasper. todo');`
+                "content": `OUT('Hey, I\\'m Jasper. todo');`
             },
             {
                 "type": "<<data>>",
@@ -142,15 +142,15 @@ const FS_IMPORT = [
 if (!file) return;
 
 if (file.getType() === '<<folder>>') {
-    SHELL.error(ARGS[1] + ': is a directory');
+    ERR(ARGS[1] + ': is a directory');
     return;
 }
-SHELL.print(file.getContent());`
+OUT(file.getContent());`
             },
             {
                 "type": "<<data>>",
                 "name": "contact",
-                "content": `SHELL.print('✉ <a href="mailto:jasper.q.andrew@gmail.com">jasper.q.andrew@gmail.com</a>');`
+                "content": `OUT('EMAIL: <a href="mailto:jasper.q.andrew@gmail.com">jasper.q.andrew@gmail.com</a>');`
             },
             {
                 "type": "<<link>>",
@@ -160,18 +160,18 @@ SHELL.print(file.getContent());`
             {
                 "type": "<<data>>",
                 "name": "help",
-                "content": `SHELL.error(ARGS[0] + ': program not implemented');`
+                "content": `ERR(ARGS[0] + ': program not implemented');`
             },
             {
                 "type": "<<data>>",
                 "name": "resume",
-                "content": `SHELL.print('opening in new window...');
+                "content": `OUT('opening in new window...');
 window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); }, 500);`
             },
             {
                 "type": "<<data>>",
                 "name": "welcome",
-                "content": `SHELL.print(
+                "content": `OUT(
 \`                         W E L C O M E   T O
 
 

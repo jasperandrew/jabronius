@@ -4,7 +4,7 @@ import { FLDR } from "./struct/JFile.mjs";
 
 export class Shell {
     constructor(_sys, _filesys, _dirPath='/') {
-        
+
         ////// Private Fields /////////////////
 
         let _printing = false;
@@ -71,7 +71,7 @@ export class Shell {
         };
 
         const _fireFrameUpdated = (promptOnly) => {
-            _sys.onFrameUpdated(promptOnly ? 1 : 0);
+            _sys.updateFrame(promptOnly ? 1 : 0);
         };
 
         const _commands = {
