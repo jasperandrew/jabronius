@@ -93,7 +93,7 @@ export class System {
             _display.displayFrame(buf, !lines);
         };
 
-        this.run = (argstr, dir=_filesys.getFileFromPath('/bin')) => {        
+        this.run = (argstr, dir=_filesys.getFileFromPath('/scr')) => {        
             if (typename(argstr) !== 'String') {
                 console.error('Arguments must be a string');
                 return false;

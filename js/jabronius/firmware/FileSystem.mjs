@@ -128,7 +128,7 @@ export class FileSystem {
 const FS_IMPORT = [
     {
         "type": "<<folder>>",
-        "name": "bin",
+        "name": "scr",
         "content": [
             {
                 "type": "<<data>>",
@@ -155,7 +155,7 @@ OUT(file.getContent());`
             {
                 "type": "<<link>>",
                 "name": "cv",
-                "content": "/bin/resume"
+                "content": "/scr/resume"
             },
             {
                 "type": "<<data>>",
