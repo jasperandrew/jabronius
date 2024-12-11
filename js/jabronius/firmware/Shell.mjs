@@ -75,7 +75,7 @@ export class Shell {
 
         const _commands = {
             cd: (args) => {
-                let path = args[1],
+                let path = args[1] ?? '.',
                     file = this.resolveDir(path);
 
                 if (!file) return false;
@@ -89,8 +89,9 @@ export class Shell {
 
                 if (!folder) return false;
 
-                const list = folder.getContent(),
-                    names = Object.keys(list).map(name => list[name].toString());
+                const list = folder.getContent();
+                const names = Object.keys(list).map(name => list[name].toString());
+                
                 names.push('.');
                 if (!folder.isRoot()) names.push('..');
 
@@ -135,17 +136,9 @@ export class Shell {
             window.setTimeout(() => _printFromQueue(), _print_delay ? 7 : 0);
         };
 
-        const _runScript = (argstr, dir='/scr') => {
-            if (typename(argstr) !== 'String') {
-                console.error('Arguments must be a string');
-                return;
-            }
-
-            if (!/\S/.test(argstr)) return;
-
-            const args = parseArgs(argstr),
-                name = args[0],
-                cmdPath = dir + `/${name}`;
+        const _runScript = (args, dir='/scr') => {
+            const name = args[0];
+            const cmdPath = dir + `/${name}`;
 
             let file = _filesys.getFileFromPath(cmdPath, true);
 
@@ -201,17 +194,16 @@ export class Shell {
         };
 
         this.run = (argstr) => {
-            if (!/\S/.test(argstr)) return;
+            if (!/\S/.test(argstr)) return; // todo: throw error?
 
             _history.add(argstr);
 
-            const args = parseArgs(argstr),
-                name = args[0];
+            const args = parseArgs(argstr), name = args[0];
 
             if (Object.keys(_commands).includes(name)) {
                 _commands[name](args);
             } else {
-                _runScript(argstr);
+                _runScript(args);
             }
         };
 
@@ -231,10 +223,9 @@ export class Shell {
     }
 }
 
-export const parseArgs = (str) => {
-    let delims = ['"', '\''],
-        args = [],
-        start = 0, i = 0;
+const parseArgs = (str) => {
+    const delims = ['"', '\''];
+    let args = [], start = 0, i = 0;
 
     while (i < str.length) {
         let arg = '';
