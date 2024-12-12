@@ -1,58 +1,98 @@
-import { DATA, FLDR, JFile, LINK } from './struct/JFile.mjs';
-import { JFolder } from './struct/JFolder.mjs';
-import { JFolderRoot } from './struct/JFolderRoot.mjs';
+import { REG, DIR, JFile, LNK } from './struct/JFile.mjs';
+import { JDirectory } from './struct/JDirectory.mjs';
+import { JDirectoryRoot } from './struct/JDirectoryRoot.mjs';
 import { JLink } from './struct/JLink.mjs';
+
+const DEF_PATH_RESOLVE = true;
+const DEF_PATH_MKDIRS = false;
+const DEF_PATH_TOUCH = false;
 
 export class FileSystem {
     constructor() {
 
         ////// Private Fields /////////////////
 
-        let _root = new JFolderRoot();
-        
-        const _getFileWithRelPath = (file, pathList, resolve) => {
+        const _root = new JDirectoryRoot();
+
+        const _getPathList = (path) => {
+            if (!path) return null;
+            let pathList = path.split('/');
+            return pathList.filter(name => name);
+        }
+
+        const _resolveAbsolutePath = (pathList, config) => {
+            return _resolveRelativePath(_root, pathList, config);
+        }
+
+        const _resolveRelativePath = (file, pathList, config) => {
+            if (!config) config = {};
+            let resolve = config.resolve ?? DEF_PATH_RESOLVE,
+                mkdirs = config.mkdirs ?? DEF_PATH_MKDIRS,
+                touch = config.touch ?? DEF_PATH_TOUCH,
+                type = config.filetype ?? REG,
+                parent = config.parent,
+                name = config.name;
+            
             if (!pathList?.length) {
-                if (resolve && file?.getType() === LINK)
-                    return _getFileFromLink(file, null, true);
+                if (resolve && file?.getType() === LNK)
+                    return _resolvePathFromLink(file, null, config);
+
+                if (touch && parent && name) {
+                    switch (type) {
+                        case REG: file = new JFile(name); break;
+                        case DIR: file = new JDirectory(name); break;
+                        case LNK: file = new JLink(name); break;
+                        default: return null;
+                    }
+                    parent.addFile(file);
+                }
                 return file;
             }
-            if (!pathList[0]) {
-                pathList.shift();
-                return _getFileWithRelPath(file, pathList, resolve);
-            }
-            switch (file?.getType()) {
-                case FLDR: {
-                    return _getFileFromFolder(file, pathList, resolve);
-                }
-                case LINK: {
-                    return _getFileFromLink(file, pathList, resolve);
-                }
-                case DATA:
-                default:
-                    return null;
-            }
-        };
 
-        const _getFileFromFolder = (folder, pathList, resolve) => {
-            if (!pathList?.length) return folder;
+            switch (file?.getType()) {
+                case DIR: {
+                    return _resolvePathFromFolder(file, pathList, config);
+                }
+                case LNK: {
+                    return _resolvePathFromLink(file, pathList, config);
+                }
+                case REG: {
+                    // todo: throw error?
+                    return null;
+                }
+            }
+
+            if (mkdirs && parent && name) {
+                let newDir = new JDirectory(name);
+                parent.addFile(newDir);
+                return _resolvePathFromFolder(newDir, pathList, config);
+            }
+
+            return null;
+        }
+
+        const _resolvePathFromFolder = (dir, pathList, config) => {
+            if (!pathList?.length) return dir;
             const next = pathList.shift();
             if (next === '.') {
-                return _getFileFromFolder(folder, pathList, resolve);
+                return _resolvePathFromFolder(dir, pathList, config);
             }
             if (next === '..') {
-                return _getFileFromFolder(folder.getParent(), pathList, resolve);
+                return _resolvePathFromFolder(dir.getParent(), pathList, config);
             }
-            const nextFile = folder.getContent()[next];
-            return _getFileWithRelPath(nextFile, pathList, resolve)
-        };
+            let nextFile = dir.getContent()[next];
+            config.parent = dir;
+            config.name = next;
+            return _resolveRelativePath(nextFile, pathList, config);
+        }
 
-        const _getFileFromLink = (link, pathList, resolve) => {
+        const _resolvePathFromLink = (link, pathList, config) => {
             let newPath = link.getContent();
             if (pathList?.length) newPath += '/' + pathList.join('/')
-            return this.getFileFromPath(newPath, resolve);
-        };
+            return _resolveAbsolutePath(_getPathList(newPath), config);
+        }
 
-        const _import = (folder, arrJSON) => {
+        const _import = (dir, arrJSON) => {
             arrJSON.forEach(f => {
                 if (!f) {
                     console.error('import file invalid');
@@ -63,60 +103,60 @@ export class FileSystem {
                     content = f['content'];
                 let file;
                 switch (type) {
-                    case FLDR: {
-                        file = new JFolder(name);
-                        _import(file, content);
-                        break;
-                    }
-                    case DATA: {
+                    case REG: {
                         file = new JFile(name, content);
                         break;
                     }
-                    case LINK: {
+                    case DIR: {
+                        file = new JDirectory(name);
+                        _import(file, content);
+                        break;
+                    }
+                    case LNK: {
                         file = new JLink(name, content);
                         break;
                     }
                     default:
                 }
-                _addSubFile(folder, file);
+                return _addSubFile(dir, file);
             });
-        };
+        }
 
-        const _addSubFile = (folder, file) => {
-            if (!folder || !file || !(file.getName())) {
-                console.error('folder or file invalid');
+        const _addSubFile = (dir, file) => {
+            if (!dir) {
+                console.error('invalid dir');
                 return;
             }
-            if (typeof(folder.getContent()) !== 'object') {
-                console.error('folder contents invalid. making it a blank object.');
-                folder.setContent({});
+            if (typeof(dir.getContent()) !== 'object') {
+                console.error('dir contents invalid. making it a blank object.');
+                dir.setContent({});
             }
-            folder.getContent()[file.getName()] = file;
-            file.setParent(folder);
-        };
+            dir.addFile(file);
+        }
 
 
         ////// Public Fields //////////////////
 
         this.getRootDir = () => _root;
 
-        this.getFileFromPath = (path, resolve=false) => {
-            if (path[0] !== '/') path = `/${path}`;
-            let pathList = path.split('/');
-            pathList.shift();
-            return _getFileWithRelPath(_root, pathList, resolve);
-        };
-
-        this.isValidPath = (path) => {
-            return getFileFromPath(path) === undefined ? false : true;
-        };
+        this.getFileFromPath = (path, config) => {
+            return _resolveAbsolutePath(_getPathList(path), config);
+        }
 
         this.getPath = (file) => {
             if (!file) return '<<err>>';
             if (file === _root) return '/';
             const parentName = this.getPath(file.getParent());
             return parentName + (parentName === '/' ? '' : '/') + file.getName();
-        };
+        }
+
+        this.createFile = (path, type=REG, mkdirs=true) => {
+            return _resolveAbsolutePath(_getPathList(path), {
+                mkdirs: mkdirs,
+                touch: true,
+                type: type,
+            });
+        }
 
 
         ////// Initialize /////////////////////
@@ -127,49 +167,49 @@ export class FileSystem {
 
 const FS_IMPORT = [
     {
-        "type": "__folder__",
+        "type": 1,
         "name": "scr",
         "content": [
             {
-                "type": "__data__",
+                "type": 0,
                 "name": "about",
                 "content": `OUT('Hey, I\\'m Jasper. todo');`
             },
             {
-                "type": "__data__",
+                "type": 0,
                 "name": "cat",
                 "content": `const file = SHELL.resolveFile(ARGS[1]);
 if (!file) return;
 
-if (file.getType() === '__folder__') {
+if (file.getType() === 1) {
     ERR(ARGS[1] + ': is a directory');
     return;
 }
 OUT(file.getContent());`
             },
             {
-                "type": "__data__",
+                "type": 0,
                 "name": "contact",
                 "content": `OUT('EMAIL: <a href="mailto:jasper.q.andrew@gmail.com">jasper.q.andrew@gmail.com</a>');`
             },
             {
-                "type": "__link__",
+                "type": 2,
                 "name": "cv",
                 "content": "/scr/resume"
             },
             {
-                "type": "__data__",
+                "type": 0,
                 "name": "help",
                 "content": `ERR(ARGS[0] + ': program not implemented');`
             },
             {
-                "type": "__data__",
+                "type": 0,
                 "name": "resume",
                 "content": `OUT('opening in new window...');
 window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); }, 500);`
             },
             {
-                "type": "__data__",
+                "type": 0,
                 "name": "welcome",
                 "content": `OUT(
 \`                         W E L C O M E   T O
@@ -193,41 +233,41 @@ window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); 
 \`);`
             },
             {
-                "type": "__data__",
+                "type": 0,
                 "name": "errtest",
                 "content": `SHELL.nofunction();`
             },
         ]
     },
     {
-        "type": "__folder__",
+        "type": 1,
         "name": "home",
         "content": [
             {
-                "type": "__folder__",
+                "type": 1,
                 "name": "jasper",
                 "content": [
                     {
-                        "type": "__data__",
+                        "type": 0,
                         "name": "test",
                         "content": "blah"
                     },
                     {
-                        "type": "__link__",
+                        "type": 2,
                         "name": "lonk",
                         "content": "/home/jasper/fodor/lunk"
                     },
                     {
-                        "type": "__folder__",
+                        "type": 1,
                         "name": "fodor",
                         "content": [
                             {
-                                "type": "__data__",
+                                "type": 0,
                                 "name": "toast",
                                 "content": "toasty"
                             },
                             {
-                                "type": "__link__",
+                                "type": 2,
                                 "name": "lunk",
                                 "content": "/home"
                             }        

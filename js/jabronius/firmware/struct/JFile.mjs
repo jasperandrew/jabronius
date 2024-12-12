@@ -1,5 +1,5 @@
 export class JFile {
-    constructor(_name, _content, _type=DATA) {
+    constructor(_name, _content, _type=REG) {
         // Private Fields /////////////////
         let _parent = null;
 
@@ -17,6 +17,6 @@ export class JFile {
     }
 }
 
-export const FLDR = '__folder__';
-export const DATA = '__data__';
-export const LINK = '__link__';
+export const REG = 0;
+export const DIR = 1;
+export const LNK = 2;

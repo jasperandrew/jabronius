@@ -1,6 +1,6 @@
-import { JFolder } from './JFolder.mjs';
+import { JDirectory } from './JDirectory.mjs';
 
-export class JFolderRoot extends JFolder {
+export class JDirectoryRoot extends JDirectory {
     constructor() {
         super();
 

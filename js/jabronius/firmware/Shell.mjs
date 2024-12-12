@@ -1,5 +1,5 @@
 import { ModCtrl } from "../hardware/Keyboard.mjs";
-import { FLDR } from "./struct/JFile.mjs";
+import { DIR } from "./struct/JFile.mjs";
 
 export class Shell {
     constructor(_sys, _filesys, _dirPath='/') {
@@ -39,15 +39,15 @@ export class Shell {
             return { nav: nav, add: add, setLvl: setLvl };
         })();
 
+        const _getAbsolutePath = (path) => {
+            if (!path) return null;
+            if (path?.startsWith('/')) return path;
+            return _dirPath + (path ? `/${path}` : '');
+        }
+
         const _resolveFile = (path) => {
-            let absPath;
-            if (path?.startsWith('/')) {
-                absPath = path;
-            } else {
-                absPath = _dirPath + (path ? `/${path}` : '');
-            }
-            return _filesys.getFileFromPath(absPath, true);
-        };
+            return _filesys.getFileFromPath(_getAbsolutePath(path));
+        }
 
         const _verifyFile = (file, path) => {
             if (!file) {
@@ -56,44 +56,44 @@ export class Shell {
             }
             
             return file;
-        };
+        }
 
         const _verifyDir = (file, path) => {
             if (!_verifyFile(file, path)) return null;
 
-            if (file.getType() !== FLDR) {
+            if (file.getType() !== DIR) {
                 this.error(`${file.getName()}: not a directory`);
                 return null;
             }
 
             return file;
-        };
+        }
 
         const _fireFrameUpdated = (promptOnly) => {
             _sys.updateFrame(promptOnly ? 1 : 0);
-        };
+        }
 
         const _commands = {
             cd: (args) => {
                 let path = args[1] ?? '.',
-                    file = this.resolveDir(path);
+                    dir = this.resolveDir(path);
 
-                if (!file) return false;
+                if (!dir) return false;
     
-                _dirPath = _filesys.getPath(file);
+                _dirPath = _filesys.getPath(dir);
                 return true;
             },
             ls: (args) => {
                 let path = args[1] ?? '.',
-                    folder = this.resolveDir(path);
+                    dir = this.resolveDir(path);
 
-                if (!folder) return false;
+                if (!dir) return false;
 
-                const list = folder.getContent();
+                const list = dir.getContent();
                 const names = Object.keys(list).map(name => list[name].toString());
-                
+
                 names.push('.');
-                if (!folder.isRoot()) names.push('..');
+                if (!dir.isRoot()) names.push('..');
 
                 this.print(names.toSorted((a,b) => a.localeCompare(b)).join('\n'));
             },
@@ -103,14 +103,30 @@ export class Shell {
                 this.print(args.join(' '));
             },
             pwd: () => this.print(_dirPath),
-        };
+            touch: (args) => {
+                let path = args[1];
+
+                if (!path) {
+                    this.error(`touch: path argument required`);
+                    return false;
+                }
+
+                if (_resolveFile(path)) {
+                    this.error(`${path}: already exists`);
+                    return false;
+                }
+
+                return _filesys.createFile(_getAbsolutePath(path));
+            }
+        }
 
         const _submitPrompt = () => {
             const argstr = _prompt.trim();
             _prompt = '';
             this.print(_prompt_char + ' ' + argstr);
+            _history.add(argstr);
             this.run(argstr);
-        };
+        }
 
         const _printFromQueue = () => {
             _printing = true;
@@ -134,39 +150,39 @@ export class Shell {
             _fireFrameUpdated();
 
             window.setTimeout(() => _printFromQueue(), _print_delay ? 7 : 0);
-        };
+        }
 
         const _runScript = (args, dir='/scr') => {
             const name = args[0];
             const cmdPath = dir + `/${name}`;
 
-            let file = _filesys.getFileFromPath(cmdPath, true);
+            let file = _filesys.getFileFromPath(cmdPath);
 
             if (!file) {
                 this.error(`${name}: command not found`);
                 return;
             }
             
-            if (file.getType() === FLDR) {
+            if (file.getType() === DIR) {
                 this.error(`${name}: is a directory`);
                 return;
             }
 
             _sys.execScript(file.getContent(), args);
-        };
+        }
 
 
         ////// Public Fields //////////////////
         this.error = (msg) => {
             this.print('[!] ' + msg);
-        };
+        }
 
         this.print = (input='') => {
             _print_queue.push(input);
             if (_printing) return;
 
             _printFromQueue();
-        };
+        }
 
         this.onKeySignal = (signal) => {
             if (signal.char) {
@@ -191,12 +207,10 @@ export class Shell {
                 default:
             }
             _fireFrameUpdated(true);
-        };
+        }
 
         this.run = (argstr) => {
             if (!/\S/.test(argstr)) return; // todo: throw error?
-
-            _history.add(argstr);
 
             const args = parseArgs(argstr), name = args[0];
 
@@ -205,18 +219,18 @@ export class Shell {
             } else {
                 _runScript(args);
             }
-        };
+        }
 
         this.getFrameBuffer = () => {
             let buf = [..._buffer.split('\n')];
             buf[buf.length-1] += _prompt_char + ' ' + _prompt;
             return buf;
-        };
+        }
 
         this.clearBuffer = () => {
             _buffer = '';
             _fireFrameUpdated();
-        };
+        }
 
         this.resolveFile = (path) => _verifyFile(_resolveFile(path), path);
         this.resolveDir = (path) => _verifyDir(_resolveFile(path), path);

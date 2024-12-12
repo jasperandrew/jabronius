@@ -1,17 +1,17 @@
-FILE = DATA | FOLD | LINK
+FILE = REG | DIR | LNK
 
-DATA = {
-    type: "__data__",
+REG = {
+    type: 0,
     name: NAMESTR,
     data: string(any)
 }
-FOLD = {
-    type: "__folder__",
+DIR = {
+    type: 1,
     name: NAMESTR,
     contents: [ FILE ]
 }
-LINK = {
-    type: "__link__",
+LNK = {
+    type: 2,
     name: NAMESTR,
     path: /NAMESTR/NAMESTR...
 }
