@@ -102,6 +102,11 @@ export class System {
 
 		this.startup = (settings) => {
 			_shell.clearBuffer();
+			if (mobileCheck()) {
+				_shell.run('echo Currently, JaBRONIUS is only compatible with desktop browsers.');
+				_shell.run('echo We are working to correct this, so please try again later!');
+				return;
+			}
 			if (settings.welcome) _shell.run('welcome');
 			if (settings.cmd) settings.cmd.forEach(c => _shell.run(c));	
 		};
