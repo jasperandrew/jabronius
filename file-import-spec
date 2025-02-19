@@ -1,19 +1,19 @@
 FILE = REG | DIR | LNK
 
 REG = {
-    type: 0,
-    name: NAMESTR,
-    data: string(any)
+	type: 0,
+	name: NAMESTR,
+	data: string(any)
 }
 DIR = {
-    type: 1,
-    name: NAMESTR,
-    contents: [ FILE ]
+	type: 1,
+	name: NAMESTR,
+	contents: [ FILE ]
 }
 LNK = {
-    type: 2,
-    name: NAMESTR,
-    path: /NAMESTR/NAMESTR...
+	type: 2,
+	name: NAMESTR,
+	path: /NAMESTR/NAMESTR...
 }
 
 NAMESTR = string(/^[\w\.][\w\.-]*$/)

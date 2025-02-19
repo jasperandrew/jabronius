@@ -4,9 +4,9 @@
 - tab completion
 
 - commands:
-    - help
-    - man
-    - grep
+	- help
+	- man
+	- grep
 
 - JaBRONIUS JavaScript Shell Syntax (JJSS)
 
@@ -17,13 +17,13 @@
 - move all sys output to out function
 
 - component responsibilities:
-    - display: display data
-    - drive: store/retrieve data
-    - keyboard: send inputs
-    - processor: read, write, execute
-    - file system: maintain root, resolve files/paths
-    - shell: abstract/interact with file system
-    - system: communicate between components
+	- display: display data
+	- drive: store/retrieve data
+	- keyboard: send inputs
+	- processor: read, write, execute
+	- file system: maintain root, resolve files/paths
+	- shell: abstract/interact with file system
+	- system: communicate between components
 
 - add blinking caret to prompt
 - prompt newline support
