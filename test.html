@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title> await on button </title>
+	<meta charset="UTF-8">    
+	<script>
+		"use strict"; 
+		let fnresolve, fnreject; // the functions are saved here
+		let nres=0, nrej=0; 
+		window.onload = async function() {  
+			zlog (''); // 'push either button'
+			while (true) {
+				let p = new Promise((res, rej) => { fnresolve = res; fnreject=rej; } );
+				await p
+				.then( (what) => { nres+=1; zlog(what); } )
+				.catch((what) => { nrej+=1; zlog(what); } );
+			}
+		}
+		function zlog(msg) {
+			if (msg!='') document.getElementById('zlog').innerHTML += nres+' resolves, '+nrej+' rejects, this one was '+msg+'<br />';
+			document.getElementById('zlog').innerHTML += 'push either button<br />';
+		}
+
+		document.oninput = (e) => {
+			console.log(e)
+			document.getElementById('zlog').innerHTML += e.data + '<br />';
+		}
+	</script>
+</head>
+<body>
+	<input id="input"/>
+	<button onclick='fnresolve("OK");'> RESOLVE </button>
+	<button onclick='fnreject("NG");''> REJECT </button><br /><br />
+	<div id='zlog'></div>
+</body>
+</html>
