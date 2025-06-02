@@ -281,3 +281,25 @@ div { box-sizing: border-box; }
 	filter: blur(1.5px);
 	border-radius: 100%;
 }
+
+@media (max-aspect-ratio: 2/3) {
+	#keyboard, #stand, #monitor > .button, #monitor > #light {
+		display: none;
+	}
+	#wrapper {
+		width: 100vw;
+		height: 100vh;
+	}
+	#monitor {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		background: #00000000;
+	}
+	#display {
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
+	}
+}
