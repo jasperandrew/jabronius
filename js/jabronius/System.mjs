@@ -1,8 +1,9 @@
 import { Shell } from './firmware/Shell.mjs';
 import { Keyboard } from './hardware/Keyboard.mjs';
-import { Display } from './hardware/Display.mjs';
+import { Monitor } from './hardware/Monitor.mjs';
 import { FileSystem } from './firmware/FileSystem.mjs';
 import { Processor } from './hardware/Processor.mjs';
+import { ViewModel } from './ViewModel.mjs';
 
 export class System {
 	constructor() {
@@ -15,12 +16,13 @@ export class System {
 			cmd: []
 		};
 
-		const _display = new Display();
+		const _monitor = new Monitor();
 		const _keyboard = new Keyboard(this);
 		const _filesys = new FileSystem();
 		const _shell = new Shell(this, _filesys, '/home/jasper');
 		const _cpu = new Processor(this, _shell, _filesys);
 		// const _drive;
+		const _viewModel = new ViewModel(_monitor, _keyboard);
 
 		const _importSettingsFromURL = () => {
 			const url = window.location.href,
@@ -31,7 +33,7 @@ export class System {
 			const end = (url.indexOf('#') + 1 || url.length + 1) - 1,
 				paramStr = url.slice(start, end);
 			if (paramStr.length < 1) return false;
-			
+
 			const pairs = paramStr.replace(/\+/g, ' ').split('&'),
 				truthy = ['1','true', 'yes','yep', 'on'],
 				falsey = ['0','false','no', 'nope','off'];
@@ -93,10 +95,10 @@ export class System {
 			if (lines) {
 				buf = buf.slice(lines * -1);
 			}
-			_display.displayFrame(buf, !lines);
+			_monitor.displayFrame(buf, !lines);
 		};
 
-		this.execScript = (script, args) => {        
+		this.execScript = (script, args) => {
 			_cpu.execute(script, args, null, _out, _err);
 		};
 
@@ -115,7 +117,7 @@ export class System {
 		////// Initialize /////////////////////
 
 		_importSettingsFromURL();
-		if (_settings.on) _display.togglePower();
+		if (_settings.on) _monitor.togglePower();
 
 		this.startup(_settings);
 	}

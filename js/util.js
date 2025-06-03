@@ -19,3 +19,8 @@ const mobileCheck = () => {
 
 	return toMatch.some((toMatchItem) => navigator.userAgent.match(toMatchItem));
 };
+const renderedTextLength = (html) => {
+	const el = document.createElement('span');
+	el.innerHTML = html;
+	return el.textContent?.length ?? 0;
+}

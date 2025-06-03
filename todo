@@ -17,7 +17,7 @@
 - move all sys output to out function
 
 - component responsibilities:
-	- display: display data
+	- monitor: display data
 	- drive: store/retrieve data
 	- keyboard: send inputs
 	- processor: read, write, execute
