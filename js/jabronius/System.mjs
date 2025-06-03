@@ -17,12 +17,12 @@ export class System {
 		};
 
 		const _monitor = new Monitor();
-		const _keyboard = new Keyboard(this);
+		const _keyboard = new Keyboard();
 		const _filesys = new FileSystem();
 		const _shell = new Shell(this, _filesys, '/home/jasper');
 		const _cpu = new Processor(this, _shell, _filesys);
 		// const _drive;
-		const _viewModel = new ViewModel(_monitor, _keyboard);
+		const _viewModel = new ViewModel(_monitor, _keyboard, _shell);
 
 		const _importSettingsFromURL = () => {
 			const url = window.location.href,
@@ -83,12 +83,6 @@ export class System {
 
 
 		////// Public Fields //////////////////
-
-		this.getShell = () => _shell;
-
-		this.onKeySignal = (signal) => {
-			_shell.onKeySignal(signal);
-		};
 
 		this.updateFrame = (lines) => {
 			let buf = _shell.getFrameBuffer();

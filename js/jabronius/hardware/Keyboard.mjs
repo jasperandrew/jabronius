@@ -1,30 +1,16 @@
 export class Keyboard {
-	constructor(_sys) {
+	constructor() {
 
 		////// Private Fields /////////////////
 
 		let _caps = false;
 		let _passwd = false;
-		let _key_elems = {};
+		const _litKeys = new Set();
 
-		const _keyOn = (code) => {
-			if (_key_elems[code] === undefined) {
-					const key = document.querySelector('.key.' + code);
-					if(!key) _key_elems[code] = null;
-					else _key_elems[code] = key;
-			}
-			const el = _key_elems[code];
-			if (el) el.classList.add('on');
-		};
-
-		const _keyOff = (code) => {
-			const el = _key_elems[code];
-			if (el) el.classList.remove('on');
-		};
-
-		const _allOff = () => {
-			document.querySelectorAll('.key').forEach(key => key.classList.remove('on'));
-		};
+		let _litKeysUpdater = null;
+		const _notifyLitKeysUpdated = () => {
+			_litKeysUpdater?.call(null, _litKeys);
+		}
 
 		const _capsToggle = () => {
 			_caps = !_caps;
@@ -34,31 +20,34 @@ export class Keyboard {
 		const _keyDown = (e) => {
 			const event = window.event ? window.event : e;
 
-			_sys.onKeySignal(KeyInputSignal.fromKeyboardEvent(event));
-
 			if (!event.altKey) {
-					document.querySelector('.AltLeft').classList.remove('on');
-					document.querySelector('.AltRight').classList.remove('on');
+				_litKeys.delete('AltLeft');
+				_litKeys.delete('AltRight');
 			}
 
-			if (!_passwd) _keyOn(event.code);
-						
+			if (!_passwd) _litKeys.add(event.code);
+
 			if (event.code === 'CapsLock' && !event.repeat) _capsToggle();
 
 			event.preventDefault();
+			_notifyLitKeysUpdated();
 		};
 
 		const _keyUp = (e) => {
 			const event = window.event ? window.event : e;
-			_keyOff(event.code);
+			_litKeys.delete(event.code);
+			_notifyLitKeysUpdated();
 		};
 
 
-		////// Initialize /////////////////////
+		////// Public Fields //////////////////
 
-		document.onkeydown = _keyDown;
-		document.onkeyup = _keyUp;
-		document.onblur = _allOff;
+		this.bindToViewModel = (litKeysUpdater, bindKeyDown, bindKeyUp, bindBlur) => {
+			_litKeysUpdater = litKeysUpdater;
+			bindKeyDown(_keyDown);
+			bindKeyUp(_keyUp);
+			bindBlur(() => _litKeys.clear());
+		}
 	}
 }
 

@@ -8,21 +8,27 @@ export class Monitor {
 		let _res_v = 25;
 		let _lines = new Array(_res_v);
 		
-		let _updater = null;
-		const _notifyUpdater = () => {
-			_updater?.call(null, _on, _lines);
+		let _powerUpdater = null;
+		const _notifyPowerUpdated = () => {
+			_powerUpdater?.call(null, _on);
+		}
+		let _linesUpdater = null;
+		const _notifyLinesUpdated = () => {
+			_linesUpdater?.call(null, _lines);
 		}
 
 
 		////// Public Fields //////////////////
 
-		this.bindUpdater = (func) => {
-			_updater = func;
+		this.bindToViewModel = (powerUpdater, linesUpdater, bindPowerClick) => {
+			_powerUpdater = powerUpdater;
+			_linesUpdater = linesUpdater;
+			bindPowerClick(this.togglePower);
 		}
 
 		this.togglePower = () => {
 			_on = !_on;
-			_notifyUpdater();
+			_notifyPowerUpdated();
 		};
 
 		this.displayFrame = (textLines, clear=true, reversed=true) => {
@@ -37,7 +43,7 @@ export class Monitor {
 				if (len < _res_h) line += ' '.repeat(_res_h - len);
 				_lines[i] = line;
 			}
-			_notifyUpdater();
+			_notifyLinesUpdated();
 		};
 	}
 }
