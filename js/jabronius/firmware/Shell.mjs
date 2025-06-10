@@ -210,9 +210,16 @@ export class Shell {
 		}
 
 		this.run = (argstr) => {
-			if (!/\S/.test(argstr)) return; // todo: throw error?
+			if (!/\S/.test(argstr)) return;
 
-			const args = parseArgs(argstr), name = args[0];
+			const args = parseArgs(argstr)
+			const name = args[0];
+
+			if (!/^[a-zA-Z_$][\w$]*$/.test(name)) {
+				console.log(name);
+				this.error(`${name}: invalid identifier`);
+				return;
+			}
 
 			if (Object.keys(_commands).includes(name)) {
 				_commands[name](args);
@@ -238,7 +245,7 @@ export class Shell {
 }
 
 const parseArgs = (str) => {
-	const delims = ['"', '\''];
+	const delims = ['"', '\'', "\`"];
 	let args = [], start = 0, i = 0;
 
 	while (i < str.length) {
@@ -255,7 +262,7 @@ const parseArgs = (str) => {
 			while(str[i] !== d){
 				i++;
 				if(i >= str.length){
-					console.error(`parse: missing delimiter (${d})`);
+					console.error(`parse: missing delimiter (${d})`); // todo: handle this better
 					return null;
 				}
 			}
@@ -263,7 +270,7 @@ const parseArgs = (str) => {
 			start = i+1;
 		}
 
-		if (arg !== '' && arg !== ' ') args.push(arg);
+		if (arg !== '' && arg !== ' ') args.push(arg.trim());
 		i++;
 	}
 	
