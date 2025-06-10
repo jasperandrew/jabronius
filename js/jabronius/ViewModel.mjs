@@ -5,6 +5,12 @@ export class ViewModel {
 
 		////// Private Fields /////////////////
 
+		const _settings = {
+				on: true,
+				welcome: true,
+				cmd: []
+		};
+
 		const _displayElem = document.querySelector('#display');
 		const _lightElem = document.querySelector('#light');
 		const _lineElems = [];
@@ -23,6 +29,7 @@ export class ViewModel {
 		const _initDisplayRows = (num_lines) => {
 			_lineElems.length = 0;
 			const readout = document.querySelector('#readout');
+			readout.innerHTML = '';
 			for (let i = 0; i < num_lines; i++) {
 				const span = document.createElement('span');
 				_lineElems.push(span);
@@ -35,6 +42,56 @@ export class ViewModel {
 			_keydown?.call(null, e);
 			_shell.onKeySignal(KeyInputSignal.fromKeyboardEvent(e));
 		};
+
+		const _importSettingsFromURL = () => {
+			const url = window.location.href;
+			const start = url.indexOf('?') + 1;
+
+			if (start === 0) return false;
+
+			const end = (url.indexOf('#') + 1 || url.length + 1) - 1;
+			const paramStr = url.slice(start, end);
+			if (paramStr.length < 1) return false;
+
+			const pairs = paramStr.replace(/\+/g, ' ').split('&');
+			const truthy = ['1','true', 'yes','yep', 'on'];
+			const falsey = ['0','false','no', 'nope','off'];
+
+			pairs.forEach(pair => {
+				let p = pair.split('=', 2);
+				let name = decodeURIComponent(p[0]).trim(), // setting name
+					val = decodeURIComponent(p[1]); // setting value
+				let type = typename(_settings[name]);
+
+				switch (type) {
+					case 'Boolean': {
+						if (truthy.indexOf(val) > -1) {
+							_settings[name] = true;
+							break;
+						}
+						if (falsey.indexOf(val) > -1) {
+							_settings[name] = false;
+							break;
+						}
+						console.warn(`Value '${val}' is invalid for setting '${name}'. Skipping...`);
+						break;
+					}
+					case 'String': {
+						_settings[name] = val;
+						break;
+					}
+					case 'Array': {
+						_settings[name].push(val);
+						break;
+					}
+					default:
+						console.warn(`Setting '${name}' does not exist. Skipping...`);
+				}
+			});
+
+			return true;
+		};
+
 
 		////// Public Fields //////////////////
 
@@ -63,7 +120,14 @@ export class ViewModel {
 			}
 		};
 
+		this.getSettings = () => {
+			return _settings;
+		};
+
+
 		////// Initialize /////////////////////
+
+		_importSettingsFromURL();
 
 		_monitor.bindToViewModel(
 			this.onMonitorPowerUpdated,
