@@ -1,15 +1,9 @@
-import { Shell } from './firmware/Shell.mjs';
-import { Keyboard } from './hardware/Keyboard.mjs';
-import { Monitor } from './hardware/Monitor.mjs';
-import { FileSystem } from './firmware/FileSystem.mjs';
-import { Processor } from './hardware/Processor.mjs';
+import { FileSystem } from './firmware/FileSystem';
+import { Shell } from './firmware/Shell';
+import { Keyboard } from './hardware/Keyboard';
+import { Monitor } from './hardware/Monitor';
+import { Processor } from './hardware/Processor';
 export class System {
-    out(tag, str) {
-        this.shell.print(str);
-    }
-    err(tag, str) {
-        this.shell.error(str);
-    }
     constructor() {
         this.monitor = new Monitor();
         this.keyboard = new Keyboard();
@@ -21,6 +15,12 @@ export class System {
         if (config.on)
             this.monitor.togglePower();
         this.startup(config);
+    }
+    out(tag, str) {
+        this.shell.print(str);
+    }
+    err(tag, str) {
+        this.shell.error(str);
     }
     execScript(script, args) {
         this.cpu.execute(script, args, null, this.out, this.err);

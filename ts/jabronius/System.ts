@@ -1,9 +1,9 @@
-import { FileSystem } from './firmware/FileSystem.js';
-import { Shell } from './firmware/Shell.js';
-import { Keyboard } from './hardware/Keyboard.js';
-import { Monitor } from './hardware/Monitor.js';
-import { Processor } from './hardware/Processor.js';
-import { InitConfig, ViewModel } from './ViewModel.js';
+import { FileSystem } from './firmware/FileSystem';
+import { Shell } from './firmware/Shell';
+import { Keyboard } from './hardware/Keyboard';
+import { Monitor } from './hardware/Monitor';
+import { Processor } from './hardware/Processor';
+import { InitConfig, ViewModel } from './ViewModel';
 
 export class System {
 	private readonly monitor: Monitor = new Monitor();
@@ -13,19 +13,19 @@ export class System {
 	private readonly cpu: Processor = new Processor(this, this.shell, this.filesys);
 	private readonly viewModel: ViewModel = new (this.monitor, this.keyboard, this.shell);
 
+	constructor() {
+		let config = this.viewModel.getConfig();
+		if (config.on) this.monitor.togglePower();
+
+		this.startup(config);
+	}
+
 	private out(tag: string, str: string) {
 		this.shell.print(str);
 	}
 
 	private err(tag: string, str: string) {
 		this.shell.error(str);
-	}
-
-	constructor() {
-		let config = this.viewModel.getConfig();
-		if (config.on) this.monitor.togglePower();
-
-		this.startup(config);
 	}
 
 	execScript(script: string, args: Array<string>) {

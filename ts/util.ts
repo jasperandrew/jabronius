@@ -1,5 +1,8 @@
-const typename = (o: any) => (o === '' || o) ? o.constructor.name : o;
-const mobileCheck = () => {
+function typename(o: any) {
+	return (o === '' || o) ? o.constructor.name : o;
+}
+
+function mobileCheck() {
 	if ((navigator as any)?.userAgentData?.mobile) return true;
 
 	// modified from detectmobilebrowsers.com
@@ -18,8 +21,9 @@ const mobileCheck = () => {
 	];
 
 	return toMatch.some((toMatchItem) => navigator.userAgent.match(toMatchItem));
-};
-const renderedTextLength = (html: string) => {
+}
+
+function renderedTextLength(html: string) {
 	const el = document.createElement('span');
 	el.innerHTML = html;
 	return el.textContent?.length ?? 0;

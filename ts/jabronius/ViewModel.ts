@@ -1,19 +1,17 @@
-import { Shell } from './firmware/Shell.js';
-import { KeyInputSignal, Keyboard } from './hardware/Keyboard.js';
-import { Monitor } from './hardware/Monitor.js';
+import { Shell } from './firmware/Shell';
+import { KeyInputSignal, Keyboard } from './hardware/Keyboard';
+import { Monitor } from './hardware/Monitor';
 
 export interface InitConfig {
 	on: boolean;
 	commands: Array<string>;
 }
 
-export type MouseEventHandler = ((this: GlobalEventHandlers, ev: MouseEvent) => any) | null;
-export type KeyboardEventHandler = ((this: GlobalEventHandlers, ev: KeyboardEvent) => any) | null;
-export type FocusEventHandler = ((this: GlobalEventHandlers, ev: FocusEvent) => any) | null;
+export type MouseEventHandler    = (ev: MouseEvent)    => any | null;
+export type KeyboardEventHandler = (ev: KeyboardEvent) => any | null;
+export type FocusEventHandler    = (ev: FocusEvent)    => any | null;
 
 export class ViewModel {
-	private readonly shell: Shell;
-
 	private readonly config: InitConfig = {
 		on: true,
 		commands: ['welcome']
@@ -23,6 +21,28 @@ export class ViewModel {
 	private readonly lightElem = document.querySelector('#light')!!;
 	private readonly lineElems: Array<HTMLSpanElement> = [];
 	private readonly keyElems: { [code: string]: Element | null } = {};
+
+	constructor(
+		private readonly shell: Shell,
+		monitor: Monitor,
+		keyboard: Keyboard
+	) {
+		this.importSettingsFromURL();
+
+		monitor.bindToViewModel(
+			this.onMonitorPowerUpdated,
+			this.onMonitorLinesUpdated,
+			(f: MouseEventHandler) => (document.querySelector<HTMLDivElement>('.button.power')!!).onclick = f);
+
+		keyboard.bindToViewModel(
+			this.onKeyboardLitKeysUpdated,
+			(f: KeyboardEventHandler) => this.keydown = f,
+			(f: KeyboardEventHandler) => document.onkeyup = f,
+			(f: FocusEventHandler) => document.onblur = f
+		);
+
+		document.onkeydown = this.onKeyDown;
+	}
 
 	private getKeyElem(code: string) {
 		if (this.keyElems[code] === undefined) {
@@ -46,7 +66,7 @@ export class ViewModel {
 	};
 
 	keydown: Function | null = null;
-	private onKeyDown = (e: Event) => {
+	private onKeyDown = (e: KeyboardEvent) => {
 		this.keydown?.call(null, e);
 		this.shell.onKeySignal(KeyInputSignal.fromKeyboardEvent(e));
 	};
@@ -89,26 +109,6 @@ export class ViewModel {
 			}
 		});
 	};
-
-	constructor(monitor: Monitor, keyboard: Keyboard, shell: Shell) {
-		this.shell = shell;
-
-		this.importSettingsFromURL();
-
-		monitor.bindToViewModel(
-			this.onMonitorPowerUpdated,
-			this.onMonitorLinesUpdated,
-			(f: MouseEventHandler) => (document.querySelector<HTMLDivElement>('.button.power')!!).onclick = f);
-
-		keyboard.bindToViewModel(
-			this.onKeyboardLitKeysUpdated,
-			(f: KeyboardEventHandler) => this.keydown = f,
-			(f: KeyboardEventHandler) => document.onkeyup = f,
-			(f: FocusEventHandler) => document.onblur = f
-		);
-
-		document.onkeydown = this.onKeyDown;
-	}
 
 	onMonitorPowerUpdated(on: boolean) {
 		if (on !== this.displayElem.classList.contains('on')) {

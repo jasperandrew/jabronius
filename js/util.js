@@ -1,6 +1,8 @@
 "use strict";
-const typename = (o) => (o === '' || o) ? o.constructor.name : o;
-const mobileCheck = () => {
+function typename(o) {
+    return (o === '' || o) ? o.constructor.name : o;
+}
+function mobileCheck() {
     var _a;
     if ((_a = navigator === null || navigator === void 0 ? void 0 : navigator.userAgentData) === null || _a === void 0 ? void 0 : _a.mobile)
         return true;
@@ -20,10 +22,10 @@ const mobileCheck = () => {
         /Windows Phone/i
     ];
     return toMatch.some((toMatchItem) => navigator.userAgent.match(toMatchItem));
-};
-const renderedTextLength = (html) => {
+}
+function renderedTextLength(html) {
     var _a, _b;
     const el = document.createElement('span');
     el.innerHTML = html;
     return (_b = (_a = el.textContent) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0;
-};
+}

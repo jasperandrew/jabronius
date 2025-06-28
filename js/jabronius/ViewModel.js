@@ -1,28 +1,7 @@
-import { KeyInputSignal } from './hardware/Keyboard.mjs';
+import { KeyInputSignal } from './hardware/Keyboard';
 export class ViewModel {
-    getKeyElem(code) {
-        if (this.keyElems[code] === undefined) {
-            let elem = document.querySelector('.key.' + code);
-            if (!elem)
-                elem = null;
-            this.keyElems[code] = elem;
-            return elem;
-        }
-        return this.keyElems[code];
-    }
-    ;
-    initDisplayRows(num_lines) {
-        this.lineElems.length = 0;
-        const readout = document.querySelector('#readout');
-        readout.innerHTML = '';
-        for (let i = 0; i < num_lines; i++) {
-            const span = document.createElement('span');
-            this.lineElems.push(span);
-            readout.prepend(span);
-        }
-    }
-    ;
-    constructor(monitor, keyboard, shell) {
+    constructor(shell, monitor, keyboard) {
+        this.shell = shell;
         this.config = {
             on: true,
             commands: ['welcome']
@@ -72,12 +51,33 @@ export class ViewModel {
                 }
             });
         };
-        this.shell = shell;
         this.importSettingsFromURL();
         monitor.bindToViewModel(this.onMonitorPowerUpdated, this.onMonitorLinesUpdated, (f) => (document.querySelector('.button.power')).onclick = f);
         keyboard.bindToViewModel(this.onKeyboardLitKeysUpdated, (f) => this.keydown = f, (f) => document.onkeyup = f, (f) => document.onblur = f);
         document.onkeydown = this.onKeyDown;
     }
+    getKeyElem(code) {
+        if (this.keyElems[code] === undefined) {
+            let elem = document.querySelector('.key.' + code);
+            if (!elem)
+                elem = null;
+            this.keyElems[code] = elem;
+            return elem;
+        }
+        return this.keyElems[code];
+    }
+    ;
+    initDisplayRows(num_lines) {
+        this.lineElems.length = 0;
+        const readout = document.querySelector('#readout');
+        readout.innerHTML = '';
+        for (let i = 0; i < num_lines; i++) {
+            const span = document.createElement('span');
+            this.lineElems.push(span);
+            readout.prepend(span);
+        }
+    }
+    ;
     onMonitorPowerUpdated(on) {
         if (on !== this.displayElem.classList.contains('on')) {
             this.lightElem.classList.toggle('on');
