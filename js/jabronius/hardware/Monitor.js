@@ -1,30 +1,25 @@
 export class Monitor {
-    constructor() {
-        this.on = false;
-        this.res_h = 71;
-        this.res_v = 25;
-        this.lines = new Array(this.res_v);
-        this.powerUpdater = null;
-        this.notifyPowerUpdated = () => {
-            var _a;
-            (_a = this.powerUpdater) === null || _a === void 0 ? void 0 : _a.call(null, this.on);
-        };
-        this.linesUpdater = null;
-        this.notifyLinesUpdated = () => {
-            var _a;
-            (_a = this.linesUpdater) === null || _a === void 0 ? void 0 : _a.call(null, this.lines);
-        };
-    }
+    on = false;
+    res_h = 71;
+    res_v = 25;
+    lines = new Array(this.res_v);
+    powerUpdater = null;
+    notifyPowerUpdated = () => {
+        this.powerUpdater?.call(null, this.on);
+    };
+    linesUpdater = null;
+    notifyLinesUpdated = () => {
+        this.linesUpdater?.call(null, this.lines);
+    };
     bindToViewModel(powerUpdater, linesUpdater, bindPowerClick) {
         this.powerUpdater = powerUpdater;
         this.linesUpdater = linesUpdater;
         bindPowerClick(this.togglePower);
     }
-    togglePower() {
+    togglePower = () => {
         this.on = !this.on;
         this.notifyPowerUpdated();
-    }
-    ;
+    };
     displayFrame(textLines, clear = true, reversed = true) {
         if (reversed)
             textLines.reverse();
@@ -43,5 +38,4 @@ export class Monitor {
         }
         this.notifyLinesUpdated();
     }
-    ;
 }

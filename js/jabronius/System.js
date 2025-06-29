@@ -1,27 +1,28 @@
-import { FileSystem } from './firmware/FileSystem';
-import { Shell } from './firmware/Shell';
-import { Keyboard } from './hardware/Keyboard';
-import { Monitor } from './hardware/Monitor';
-import { Processor } from './hardware/Processor';
+import { FileSystem } from './firmware/FileSystem.js';
+import { Shell } from './firmware/Shell.js';
+import { Keyboard } from './hardware/Keyboard.js';
+import { Monitor } from './hardware/Monitor.js';
+import { Processor } from './hardware/Processor.js';
+import { ViewModel } from './ViewModel.js';
 export class System {
+    monitor = new Monitor();
+    keyboard = new Keyboard();
+    filesys = new FileSystem();
+    shell = new Shell(this, this.filesys, '/home/jasper');
+    cpu = new Processor(this, this.shell, this.filesys);
+    viewModel = new ViewModel(this.shell, this.monitor, this.keyboard);
     constructor() {
-        this.monitor = new Monitor();
-        this.keyboard = new Keyboard();
-        this.filesys = new FileSystem();
-        this.shell = new Shell(this, this.filesys, '/home/jasper');
-        this.cpu = new Processor(this, this.shell, this.filesys);
-        this.viewModel = new (this.monitor, this.keyboard, this.shell);
         let config = this.viewModel.getConfig();
         if (config.on)
             this.monitor.togglePower();
         this.startup(config);
     }
-    out(tag, str) {
+    out = (tag, str) => {
         this.shell.print(str);
-    }
-    err(tag, str) {
+    };
+    err = (tag, str) => {
         this.shell.error(str);
-    }
+    };
     execScript(script, args) {
         this.cpu.execute(script, args, null, this.out, this.err);
     }

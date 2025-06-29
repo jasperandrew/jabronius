@@ -14,7 +14,7 @@ export class Keyboard {
 		// _key_elems['CapsLock'].classList.toggle('locked');
 	};
 
-	private keyDown(e: KeyboardEvent) {
+	private keyDown = (e: KeyboardEvent) => {
 		if (!e.altKey) {
 			this.litKeys.delete('AltLeft');
 			this.litKeys.delete('AltRight');
@@ -28,7 +28,7 @@ export class Keyboard {
 		this.notifyLitKeysUpdated();
 	};
 
-	private keyUp(e: KeyboardEvent) {
+	private keyUp = (e: KeyboardEvent) => {
 		this.litKeys.delete(e.code);
 		this.notifyLitKeysUpdated();
 	};
@@ -55,9 +55,9 @@ export const CharKeys = [
 export class KeyInputSignal {
 	code: string;
 	char: string | null;
-	modifiers: Array<string>;
+	modifiers: string[];
 
-	constructor(code: string, char: string | null, modifiers: Array<string>) {
+	constructor(code: string, char: string | null, modifiers: string[]) {
 		this.code = code;
 		this.char = char;
 		this.modifiers = modifiers;

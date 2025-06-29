@@ -3,8 +3,7 @@ function typename(o) {
     return (o === '' || o) ? o.constructor.name : o;
 }
 function mobileCheck() {
-    var _a;
-    if ((_a = navigator === null || navigator === void 0 ? void 0 : navigator.userAgentData) === null || _a === void 0 ? void 0 : _a.mobile)
+    if (navigator?.userAgentData?.mobile)
         return true;
     // modified from detectmobilebrowsers.com
     let check = false;
@@ -24,8 +23,7 @@ function mobileCheck() {
     return toMatch.some((toMatchItem) => navigator.userAgent.match(toMatchItem));
 }
 function renderedTextLength(html) {
-    var _a, _b;
     const el = document.createElement('span');
     el.innerHTML = html;
-    return (_b = (_a = el.textContent) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0;
+    return el.textContent?.length ?? 0;
 }

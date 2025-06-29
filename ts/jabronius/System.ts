@@ -1,9 +1,9 @@
-import { FileSystem } from './firmware/FileSystem';
-import { Shell } from './firmware/Shell';
-import { Keyboard } from './hardware/Keyboard';
-import { Monitor } from './hardware/Monitor';
-import { Processor } from './hardware/Processor';
-import { InitConfig, ViewModel } from './ViewModel';
+import { FileSystem } from './firmware/FileSystem.js';
+import { Shell } from './firmware/Shell.js';
+import { Keyboard } from './hardware/Keyboard.js';
+import { Monitor } from './hardware/Monitor.js';
+import { Processor } from './hardware/Processor.js';
+import { InitConfig, ViewModel } from './ViewModel.js';
 
 export class System {
 	private readonly monitor: Monitor = new Monitor();
@@ -11,7 +11,7 @@ export class System {
 	private readonly filesys: FileSystem = new FileSystem();
 	private readonly shell: Shell = new Shell(this, this.filesys, '/home/jasper');
 	private readonly cpu: Processor = new Processor(this, this.shell, this.filesys);
-	private readonly viewModel: ViewModel = new (this.monitor, this.keyboard, this.shell);
+	private readonly viewModel: ViewModel = new ViewModel(this.shell, this.monitor, this.keyboard);
 
 	constructor() {
 		let config = this.viewModel.getConfig();
@@ -20,15 +20,15 @@ export class System {
 		this.startup(config);
 	}
 
-	private out(tag: string, str: string) {
+	private out = (tag: string, str: string) => {
 		this.shell.print(str);
 	}
 
-	private err(tag: string, str: string) {
+	private err = (tag: string, str: string) => {
 		this.shell.error(str);
 	}
 
-	execScript(script: string, args: Array<string>) {
+	execScript(script: string, args: string[]) {
 		this.cpu.execute(script, args, null, this.out, this.err);
 	}
 

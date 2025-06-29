@@ -1,13 +1,10 @@
 export class Keyboard {
-    constructor() {
-        this.litKeys = new Set();
-        this.caps = false;
-        this.passwd = false;
-        this.litKeysUpdater = null;
-    }
+    litKeys = new Set();
+    caps = false;
+    passwd = false;
+    litKeysUpdater = null;
     notifyLitKeysUpdated() {
-        var _a;
-        (_a = this.litKeysUpdater) === null || _a === void 0 ? void 0 : _a.call(null, this.litKeys);
+        this.litKeysUpdater?.call(null, this.litKeys);
     }
     capsToggle() {
         this.caps = !this.caps;
@@ -15,7 +12,7 @@ export class Keyboard {
         // _key_elems['CapsLock'].classList.toggle('locked');
     }
     ;
-    keyDown(e) {
+    keyDown = (e) => {
         if (!e.altKey) {
             this.litKeys.delete('AltLeft');
             this.litKeys.delete('AltRight');
@@ -26,13 +23,11 @@ export class Keyboard {
             this.capsToggle();
         e.preventDefault();
         this.notifyLitKeysUpdated();
-    }
-    ;
-    keyUp(e) {
+    };
+    keyUp = (e) => {
         this.litKeys.delete(e.code);
         this.notifyLitKeysUpdated();
-    }
-    ;
+    };
     bindToViewModel(litKeysUpdater, bindKeyDown, bindKeyUp, bindBlur) {
         this.litKeysUpdater = litKeysUpdater;
         bindKeyDown(this.keyDown);
@@ -51,6 +46,9 @@ export const CharKeys = [
     'KeyZ', 'KeyX', 'KeyC', 'KeyV', 'KeyB', 'KeyN', 'KeyM', 'Comma', 'Period', 'Slash', 'Space'
 ];
 export class KeyInputSignal {
+    code;
+    char;
+    modifiers;
     constructor(code, char, modifiers) {
         this.code = code;
         this.char = char;

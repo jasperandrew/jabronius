@@ -1,10 +1,10 @@
-import { Shell } from './firmware/Shell';
-import { KeyInputSignal, Keyboard } from './hardware/Keyboard';
-import { Monitor } from './hardware/Monitor';
+import { Shell } from './firmware/Shell.js';
+import { KeyInputSignal, Keyboard } from './hardware/Keyboard.js';
+import { Monitor } from './hardware/Monitor.js';
 
 export interface InitConfig {
 	on: boolean;
-	commands: Array<string>;
+	commands: string[];
 }
 
 export type MouseEventHandler    = (ev: MouseEvent)    => any | null;
@@ -110,14 +110,14 @@ export class ViewModel {
 		});
 	};
 
-	onMonitorPowerUpdated(on: boolean) {
+	onMonitorPowerUpdated = (on: boolean) => {
 		if (on !== this.displayElem.classList.contains('on')) {
 			this.lightElem.classList.toggle('on');
 			this.displayElem.classList.toggle('on');
 		}
 	}
 
-	onMonitorLinesUpdated(lines: Array<string>) {
+	onMonitorLinesUpdated = (lines: string[]) => {
 		if (this.lineElems.length !== lines.length)
 			this.initDisplayRows(lines.length);
 
@@ -128,7 +128,7 @@ export class ViewModel {
 		}
 	}
 
-	onKeyboardLitKeysUpdated(litKeys: Array<string>) {
+	onKeyboardLitKeysUpdated = (litKeys: string[]) => {
 		document.querySelectorAll('.key').forEach(elem => elem.classList.remove('on'));
 		for (let key of litKeys) {
 			this.getKeyElem(key)?.classList.add('on');

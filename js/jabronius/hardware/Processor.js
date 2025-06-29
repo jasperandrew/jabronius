@@ -1,4 +1,7 @@
 export class Processor {
+    sys;
+    shell;
+    filesys;
     constructor(sys, shell, filesys) {
         this.sys = sys;
         this.shell = shell;
@@ -14,14 +17,14 @@ export class Processor {
         }
         catch (e) {
             const err = e;
-            let msg = err === null || err === void 0 ? void 0 : err.name;
-            if (err === null || err === void 0 ? void 0 : err.lineNumber) {
-                msg += ` (${err === null || err === void 0 ? void 0 : err.lineNumber}`;
-                if (err === null || err === void 0 ? void 0 : err.columnNumber)
-                    msg += `,${err === null || err === void 0 ? void 0 : err.columnNumber}`;
+            let msg = err?.name;
+            if (err?.lineNumber) {
+                msg += ` (${err?.lineNumber}`;
+                if (err?.columnNumber)
+                    msg += `,${err?.columnNumber}`;
                 msg += ')';
             }
-            msg += `: ${err === null || err === void 0 ? void 0 : err.message}`;
+            msg += `: ${err?.message}`;
             ERR(msg);
             console.error(e);
             return false;

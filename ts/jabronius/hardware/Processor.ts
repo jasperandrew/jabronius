@@ -1,6 +1,6 @@
-import { System } from "../System";
-import { FileSystem } from './firmware/FileSystem';
-import { Shell } from './firmware/Shell';
+import { System } from "../System.js";
+import { FileSystem } from '../firmware/FileSystem.js';
+import { Shell } from '../firmware/Shell.js';
 
 export class Processor {
 	constructor(
@@ -9,7 +9,7 @@ export class Processor {
 		private readonly filesys: FileSystem
 	) {}
 
-	execute(script: string, args: Array<string>, input: string | null, outFn: Function, errFn: Function) {
+	execute(script: string, args: string[], input: string | null, outFn: Function, errFn: Function) {
 		const IN = { tag: args[0], data: input };
 		const OUT = (str: string) => outFn(args[0], str);
 		const ERR = (str: string) => errFn(args[0], str);

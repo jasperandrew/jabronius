@@ -8,6 +8,7 @@ export class Monitor {
 	private notifyPowerUpdated = () => {
 		this.powerUpdater?.call(null, this.on);
 	}
+
 	private linesUpdater: Function | null = null;
 	private notifyLinesUpdated = () => {
 		this.linesUpdater?.call(null, this.lines);
@@ -19,12 +20,12 @@ export class Monitor {
 		bindPowerClick(this.togglePower);
 	}
 
-	togglePower() {
+	togglePower = () => {
 		this.on = !this.on;
 		this.notifyPowerUpdated();
-	};
+	}
 
-	displayFrame(textLines: Array<string>, clear=true, reversed=true) {
+	displayFrame(textLines: string[], clear=true, reversed=true) {
 		if (reversed) textLines.reverse();
 		for (let i = 0; i < this.lines.length; i++) {
 			let line = textLines[i];
@@ -37,5 +38,5 @@ export class Monitor {
 			this.lines[i] = line;
 		}
 		this.notifyLinesUpdated();
-	};
+	}
 }
