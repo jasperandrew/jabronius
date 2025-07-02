@@ -141,25 +141,26 @@ export class FileSystem {
 		dir.addFile(file);
 	}
 
-	getRootDir() { return this.root; }
+	getRoot() { return this.root; }
 
-	getFileFromPath(path: string, config: ResolveConfig) {
-		return this.resolveAbsolutePath(this.getPathList(path), config);
+	getFile(filePath: string, config?: ResolveConfig): JFile | null {
+		if (!config) config = {};
+		return this.resolveAbsolutePath(this.getPathList(filePath), config);
 	}
 
-	getPath(file: JFile): string {
+	getFilePath(file: JFile): string {
 		if (file === this.root) return '/';
 		const parent = file.getParent();
 		if (parent === null) return file.getName();
-		const parentName = this.getPath(parent);
+		const parentName = this.getFilePath(parent);
 		return parentName + (parentName === '/' ? '' : '/') + file.getName();
 	}
 
-	createFile(path: string, type = JFileType.Data, mkdirs = true) {
-		return this.resolveAbsolutePath(this.getPathList(path), {
+	createFile(filePath: string, fileType = JFileType.Data, mkdirs = true) {
+		return this.resolveAbsolutePath(this.getPathList(filePath), {
 			mkdirs: mkdirs,
 			touch: true,
-			type: type,
+			type: fileType,
 		});
 	}
 }
@@ -210,7 +211,8 @@ window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); 
 			{
 				"type": 0,
 				"name": "welcome",
-				"content": `OUT(
+				"content": `
+					OUT(
 \`                         W E L C O M E   T O
 
 
@@ -235,6 +237,62 @@ window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); 
 				"type": 0,
 				"name": "errtest",
 				"content": `SHELL.nofunction();`
+			},
+			{
+				"type": 0,
+				"name": "ls",
+				"content": `
+					let path = ARGS[1] ?? '.';
+					let dir = SHELL.resolveDir(path);
+					if (!dir) return false;
+					const list = dir.getContent();
+					const names = Object.keys(list).map(name => list[name].toString());
+					names.push('.');
+					if (dir.getParent() !== null) names.push('..');
+					OUT(names.toSorted((a,b) => a.localeCompare(b)).join('\\n'));`
+			},
+			{
+				"type": 0,
+				"name": "clear",
+				"content": `SHELL.clearBuffer();`
+			},
+			{
+				"type": 0,
+				"name": "echo",
+				"content": `
+					ARGS.shift();
+					OUT(ARGS.join(' '));`
+			},
+			{
+				"type": 0,
+				"name": "pwd",
+				"content": `
+					let dir = SHELL.resolveDir('.');
+					if (!dir) return false;
+					OUT(FS.getFilePath(dir));`
+			},
+			{
+				"type": 0,
+				"name": "touch",
+				"content": `
+					let path = ARGS[1];
+
+					if (!path) {
+						ERR('touch: path argument required');
+						return false;
+					}
+
+					if (SHELL.resolveFile(path)) {
+						ERR(\`\${path}: already exists\`);
+						return false;
+					}
+
+
+					if (!path.startsWith('/')) {
+						path = FS.getFilePath(SHELL.resolveDir('.')) + '/' + path;
+					};
+
+					return FS.createFile(path);`
 			},
 		]
 	},
