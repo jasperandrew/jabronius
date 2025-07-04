@@ -1,3 +1,4 @@
+import { jfsUpdated } from '../JFileSystem.js';
 import { JFile, JFileType } from './JFile.js';
 export class JDirectory extends JFile {
     constructor(name, parent) {
@@ -22,6 +23,7 @@ export class JDirectory extends JFile {
         }
         file.setParent(this);
         this.getContent().push(file);
+        jfsUpdated();
     }
     removeFile(name) {
         if (!name)
@@ -32,5 +34,6 @@ export class JDirectory extends JFile {
         f.setParent(undefined);
         let i = this.getContent().indexOf(f);
         this.getContent().splice(i, 1);
+        jfsUpdated();
     }
 }

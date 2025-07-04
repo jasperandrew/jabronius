@@ -1,6 +1,6 @@
 import { KeyInputSignal, ModCtrl } from "../hardware/Keyboard.js";
 import { System } from "../System.js";
-import { FileSystem } from "./FileSystem.js";
+import { FileSystem } from "./JFileSystem.js";
 import { JFile, JFileType } from "./struct/JFile.js";
 
 export class Shell {

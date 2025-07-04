@@ -16,10 +16,17 @@ interface ResolveConfig {
 	name?: string;
 }
 
+let jfsUpdateCallback: Function | null = null;
+export function jfsUpdated() {
+	jfsUpdateCallback?.call(null);
+}
+
 export class FileSystem {
 	private readonly root = new JDirectoryRoot();
 
 	constructor() {
+		jfsUpdateCallback = this.jfsUpdated;
+
 		let JFS_JSON = localStorage.getItem('jfs_json');
 		if (JFS_JSON) {
 			try {
@@ -35,7 +42,7 @@ export class FileSystem {
 		}
 	}
 
-	private jfsUpdated() {
+	private jfsUpdated = () => {
 		localStorage.setItem(
 			'jfs_json',
 			JSON.stringify(
@@ -73,7 +80,6 @@ export class FileSystem {
 					case JFileType.Link: file = new JLink(name, '.', parent); break;
 				}
 				parent.addFile(file);
-				this.jfsUpdated();
 			}
 			return file;
 		}
@@ -94,7 +100,6 @@ export class FileSystem {
 		if (mkdirs && parent && name) {
 			let newDir = new JDirectory(name, parent);
 			parent.addFile(newDir);
-			this.jfsUpdated();
 			return this.resolvePathFromFolder(newDir, pathList, config);
 		}
 
@@ -185,5 +190,9 @@ export class FileSystem {
 			touch: true,
 			type: fileType,
 		});
+	}
+
+	removeFile(file: JFile) {
+		file?.getParent()?.removeFile(file.getName());
 	}
 }

@@ -1,15 +1,14 @@
 let path = ARGS[1];
 
 if (!path) {
-   ERR('touch: path argument required');
-   return false;
+   ERR(ARGS[0] + ': path argument required');
+   return;
 }
 
 if (SHELL.resolveFile(path)) {
    ERR(`${path}: already exists`);
-   return false;
+   return;
 }
-
 
 if (!path.startsWith('/')) {
    path = FS.getFilePath(SHELL.resolveDir('.')) + '/' + path;

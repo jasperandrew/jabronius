@@ -1,5 +1,5 @@
 import { System } from "../System.js";
-import { FileSystem } from '../firmware/FileSystem.js';
+import { FileSystem } from '../firmware/JFileSystem.js';
 import { Shell } from '../firmware/Shell.js';
 
 export class Processor {

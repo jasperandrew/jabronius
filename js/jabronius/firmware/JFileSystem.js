@@ -5,14 +5,14 @@ import { JLink } from './struct/JLink.js';
 const DEFAULT_PATH_RESOLVE = true;
 const DEFAULT_PATH_MKDIRS = false;
 const DEFAULT_PATH_TOUCH = false;
-let fsUpdateCallback = null;
-export function fsUpdated() {
-    fsUpdateCallback?.call(null);
+let jfsUpdateCallback = null;
+export function jfsUpdated() {
+    jfsUpdateCallback?.call(null);
 }
 export class FileSystem {
     root = new JDirectoryRoot();
     constructor() {
-        fsUpdateCallback = this.jfsUpdated;
+        jfsUpdateCallback = this.jfsUpdated;
         let JFS_JSON = localStorage.getItem('jfs_json');
         if (JFS_JSON) {
             try {

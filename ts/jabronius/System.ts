@@ -1,4 +1,4 @@
-import { FileSystem } from './firmware/FileSystem.js';
+import { FileSystem } from './firmware/JFileSystem.js';
 import { Shell } from './firmware/Shell.js';
 import { Keyboard } from './hardware/Keyboard.js';
 import { Monitor } from './hardware/Monitor.js';
