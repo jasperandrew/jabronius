@@ -1,0 +1,9 @@
+0
+---
+const file = SHELL.resolveFile(ARGS[1]);
+if (!file) return;
+if (file.getType() === 1) {
+	ERR(ARGS[1] + ': is a directory');
+	return;
+}
+OUT(file.getContent());

@@ -1,0 +1,10 @@
+0
+---
+let path = ARGS[1] ?? '.';
+let dir = SHELL.resolveDir(path);
+if (!dir) return false;
+const list = dir.getContent();
+const names = Object.keys(list).map(name => list[name].toString());
+names.push('.');
+if (dir.getParent() !== null) names.push('..');
+OUT(names.toSorted((a,b) => a.localeCompare(b)).join('\n'));

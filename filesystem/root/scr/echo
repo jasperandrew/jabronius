@@ -1,0 +1,4 @@
+0
+---
+ARGS.shift();
+OUT(ARGS.join(' '));

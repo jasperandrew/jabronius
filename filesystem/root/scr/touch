@@ -1,0 +1,20 @@
+0
+---
+let path = ARGS[1];
+
+if (!path) {
+   ERR('touch: path argument required');
+   return false;
+}
+
+if (SHELL.resolveFile(path)) {
+   ERR(`${path}: already exists`);
+   return false;
+}
+
+
+if (!path.startsWith('/')) {
+   path = FS.getFilePath(SHELL.resolveDir('.')) + '/' + path;
+};
+
+return FS.createFile(path);
