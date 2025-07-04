@@ -17,11 +17,15 @@ export class JDirectory extends JFile {
 		return str;
 	}
 
+	hasFile(name: string) {
+		return this.getContent()
+			.filter((f: JFile) => f.getName() === name)
+			.length > 0;
+	}
+
 	addFile(file: JFile) {
-		if (!file || !(file.getName())) {
-			console.error('invalid file');
-			return;
-		}
+		if (!file.getName()) return; // invalid file
+		if (this.hasFile(file.getName())) return; // file exists
 
 		file.setParent(this);
 		this.getContent().push(file);
