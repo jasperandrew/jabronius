@@ -17,6 +17,11 @@ export class FileSystem {
         if (JFS_JSON) {
             try {
                 this.importDir(this.root, JSON.parse(JFS_JSON));
+                // recover if scr directory is deleted, until a reset is added
+                if (!this.resolveAbsolutePath(this.getPathList('/scr'), {})) {
+                    console.log('no scripts, resetting');
+                    JFS_JSON = null;
+                }
             }
             catch (err) {
                 console.log('local JFS import failed', err);
