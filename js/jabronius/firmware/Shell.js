@@ -146,7 +146,6 @@ export class Shell {
         const args = parseArgs(argstr);
         const name = args[0];
         if (!/^[a-zA-Z_$][\w$]*$/.test(name)) {
-            console.log(name);
             this.error(`${name}: invalid identifier`);
             return;
         }

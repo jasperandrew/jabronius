@@ -8,7 +8,23 @@ const DEFAULT_PATH_TOUCH = false;
 export class FileSystem {
     root = new JDirectoryRoot();
     constructor() {
-        this.import(this.root, JFS_ROOT);
+        let JFS_JSON = localStorage.getItem('jfs_json');
+        if (JFS_JSON) {
+            try {
+                this.importDir(this.root, JSON.parse(JFS_JSON));
+            }
+            catch (err) {
+                console.log('local JFS import failed', err);
+                JFS_JSON = null;
+            }
+        }
+        if (!JFS_JSON) {
+            this.importDir(this.root, JFS_ROOT);
+            this.jfsUpdated();
+        }
+    }
+    jfsUpdated() {
+        localStorage.setItem('jfs_json', JSON.stringify(this.root.getContent(), (k, v) => k === 'parent' ? undefined : v));
     }
     getPathList(path) {
         if (!path)
@@ -37,6 +53,7 @@ export class FileSystem {
                         break;
                 }
                 parent.addFile(file);
+                this.jfsUpdated();
             }
             return file;
         }
@@ -55,6 +72,7 @@ export class FileSystem {
         if (mkdirs && parent && name) {
             let newDir = new JDirectory(name, parent);
             parent.addFile(newDir);
+            this.jfsUpdated();
             return this.resolvePathFromFolder(newDir, pathList, config);
         }
         return null;
@@ -69,7 +87,7 @@ export class FileSystem {
         if (next === '..') {
             return this.resolvePathFromFolder(dir ? dir.getParent() : null, pathList, config);
         }
-        let nextFile = dir?.getContent()[next];
+        let nextFile = dir?.getContent().filter((f) => f.getName() === next)[0];
         config.parent = dir;
         config.name = next;
         return this.resolveRelativePath(nextFile, pathList, config);
@@ -80,8 +98,8 @@ export class FileSystem {
             newPath += '/' + pathList.join('/');
         return this.resolveAbsolutePath(this.getPathList(newPath), config);
     }
-    import(dir, arrJSON) {
-        arrJSON.forEach(f => {
+    importDir(dir, dirObj) {
+        dirObj.forEach(f => {
             if (!f) {
                 console.error('import file invalid');
                 return;
@@ -95,7 +113,7 @@ export class FileSystem {
                 }
                 case JFileType.Directory: {
                     file = new JDirectory(name, dir);
-                    this.import(file, content);
+                    this.importDir(file, content);
                     break;
                 }
                 case JFileType.Link: {
@@ -113,8 +131,8 @@ export class FileSystem {
             return;
         }
         if (typeof (dir.getContent()) !== 'object') {
-            console.error('dir contents invalid. making it a blank object.');
-            dir.setContent({});
+            console.error('dir contents invalid. making it a blank array.');
+            dir.setContent([]);
         }
         dir.addFile(file);
     }
