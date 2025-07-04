@@ -3,23 +3,36 @@ const __dirname = import.meta.dirname;
 
 function importDir(path, jfsDir) {
 	if (path.charAt(-1) !== '/') path += '/';
-	fs.readdirSync(path).forEach(name => {
-		const filePath = path + name;
+	fs.readdirSync(path).forEach(fileName => {
+		const filePath = path + fileName;
 		if (fs.lstatSync(filePath).isDirectory()) {
 			let subDir = {
 				type: 1, // 1 = directory
-				name: name,
+				name: fileName,
 				content: []
 			};
 			importDir(filePath, subDir.content);
 			jfsDir.push(subDir);
 		} else {
+			let nameParts = fileName.split('.');
+			let ext = nameParts.pop();
+			let name = nameParts.join('.');
 			let content = fs.readFileSync(filePath).toString();
-			let type = Number.parseInt(content[0]);
-			content = content.replace(/\d[\n\r]+---[\n\r]+/g, '');
+
+			let type;
+			switch(ext) {
+				case 'jfs_lnk': {
+					type = 2; break;
+				}
+				case 'jfs_scr':
+				case 'jfs_dat':
+				default: {
+					type = 0;
+				}
+			}
 			
 			jfsDir.push({
-				type: type, // 0 = data, 2 = link
+				type: type,
 				name: name,
 				content: content
 			});
@@ -28,7 +41,6 @@ function importDir(path, jfsDir) {
 }
 
 const JFS_ROOT = [];
-console.log(__dirname);
 importDir(__dirname + '/root', JFS_ROOT);
 fs.writeFileSync(
 	__dirname + '/../ts/jfs.ts',

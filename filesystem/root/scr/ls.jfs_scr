@@ -1,5 +1,3 @@
-0
----
 let path = ARGS[1] ?? '.';
 let dir = SHELL.resolveDir(path);
 if (!dir) return false;

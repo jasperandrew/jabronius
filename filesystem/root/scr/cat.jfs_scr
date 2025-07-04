@@ -1,5 +1,3 @@
-0
----
 const file = SHELL.resolveFile(ARGS[1]);
 if (!file) return;
 if (file.getType() === 1) {
