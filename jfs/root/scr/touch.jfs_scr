@@ -1,5 +1,4 @@
 let path = ARGS[1];
-
 if (!path) {
    ERR(ARGS[0] + ': path argument required');
    return;

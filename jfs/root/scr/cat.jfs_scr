@@ -1,7 +1,12 @@
-const file = SHELL.resolveFile(ARGS[1]);
+let path = ARGS[1];
+if (!path) {
+   ERR(ARGS[0] + ': path argument required');
+   return;
+}
+const file = SHELL.resolveFile(path);
 if (!file) return;
-if (file.getType() === 1) {
-	ERR(ARGS[1] + ': is a directory');
+if (file.type === 1) {
+	ERR(path + ': is a directory');
 	return;
 }
-OUT(file.getContent());
+OUT(FS.readFile(file));

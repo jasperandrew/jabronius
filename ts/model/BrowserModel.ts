@@ -30,7 +30,7 @@ export class BrowserModel {
 			this.config = urlConfig;
 		}
 
-		jfsUpdateCallback = this.storeJFS;
+		// jfsUpdateCallback = this.storeJFS;
 	}
 
 	private parseInitConfigURL = () => {
@@ -75,85 +75,85 @@ export class BrowserModel {
 
 	private jfsRoot: JFSRoot | null = null;
 
-	private loadJFS(reset?: boolean): JFSRoot {
-		try {
-			const jfs = reset ? JFS_ROOT : JSON.parse(localStorage.getItem(JFS_JSON_KEY)!!);
-			this.jfsRoot = this.parseJFSDir(jfs ?? JFS_ROOT);
+	// private loadJFS(reset?: boolean): JFSRoot {
+	// 	try {
+	// 		const jfs = reset ? JFS_ROOT : JSON.parse(localStorage.getItem(JFS_JSON_KEY)!!);
+	// 		this.jfsRoot = this.parseJFSDir(jfs ?? JFS_ROOT);
 
-			if (reset) this.storeJFS();
+	// 		if (reset) this.storeJFS();
 
-			// recover if scr directory is deleted, until a reset is added
-			if (this.jfsRoot.getContent().filter((f: JFSFile) => f.getName() === 'scr')[0]) return this.jfsRoot;
-			console.log('no scr dir, resetting JFS');
-		} catch (err) {
-			console.log('JFS parse failed', err);
-		}
+	// 		// recover if scr directory is deleted, until a reset is added
+	// 		if (this.jfsRoot.getContent().filter((f: JFSFile) => f.getName() === 'scr')[0]) return this.jfsRoot;
+	// 		console.log('no scr dir, resetting JFS');
+	// 	} catch (err) {
+	// 		console.log('JFS parse failed', err);
+	// 	}
 
-		this.jfsRoot = this.parseJFSDir(JFS_ROOT);
-		this.storeJFS();
-		return this.jfsRoot;
-	}
+	// 	this.jfsRoot = this.parseJFSDir(JFS_ROOT);
+	// 	this.storeJFS();
+	// 	return this.jfsRoot;
+	// }
 
-	private storeJFS = () => {
-		if (!this.jfsRoot?.getContent()) {
-			localStorage.removeItem(JFS_JSON_KEY);
-			return;
-		}
-		localStorage.setItem(
-			JFS_JSON_KEY,
-			JSON.stringify(
-				this.jfsRoot.getContent(),
-				(k, v) => k === 'parent' ? undefined : v)
-		);
-	}
+	// private storeJFS = () => {
+	// 	if (!this.jfsRoot?.getContent()) {
+	// 		localStorage.removeItem(JFS_JSON_KEY);
+	// 		return;
+	// 	}
+	// 	localStorage.setItem(
+	// 		JFS_JSON_KEY,
+	// 		JSON.stringify(
+	// 			this.jfsRoot.getContent(),
+	// 			(k, v) => k === 'parent' ? undefined : v)
+	// 	);
+	// }
 
-	private parseJFSDir(dirObj: any[], dir?: JFSDirectory) { // TODO: replace this whole system, eventually
-		if (!dir) dir = new JFSRoot();
+	// private parseJFSDir(dirObj: any[], dir?: JFSDirectory) { // TODO: replace this whole system, eventually
+	// 	if (!dir) dir = new JFSRoot();
 
-		dirObj.forEach(f => {
-			if (!f) {
-				console.error('import file invalid');
-				return;
-			}
-			const name = f['name'],
-				type = f['type'],
-				content = f['content'];
-			let file;
-			switch (type) {
-				case JFSType.Data: {
-					file = new JFSFile(name, content, dir);
-					break;
-				}
-				case JFSType.Directory: {
-					file = this.parseJFSDir(content, new JFSDirectory(name, dir));
-					break;
-				}
-				case JFSType.Link: {
-					file = new JFSLink(name, content, dir);
-					break;
-				}
-				default: return;
-			}
+	// 	dirObj.forEach(f => {
+	// 		if (!f) {
+	// 			console.error('import file invalid');
+	// 			return;
+	// 		}
+	// 		const name = f['name'],
+	// 			type = f['type'],
+	// 			content = f['content'];
+	// 		let file;
+	// 		switch (type) {
+	// 			case JFSType.Data: {
+	// 				file = new JFSFile(name, content, dir);
+	// 				break;
+	// 			}
+	// 			case JFSType.Directory: {
+	// 				file = this.parseJFSDir(content, new JFSDirectory(name, dir));
+	// 				break;
+	// 			}
+	// 			case JFSType.Link: {
+	// 				file = new JFSLink(name, content, dir);
+	// 				break;
+	// 			}
+	// 			default: return;
+	// 		}
 
-			if (!dir) {
-				console.error('dir undefined');
-				return;
-			}
-			if (typename(dir.getContent()) !== 'Array') {
-				console.error('dir contents not an array. setting to blank array.');
-				dir.setContent([]);
-			}
-			dir.addFile(file);
-		});
+	// 		if (!dir) {
+	// 			console.error('dir undefined');
+	// 			return;
+	// 		}
+	// 		if (typename(dir.getContent()) !== 'Array') {
+	// 			console.error('dir contents not an array. setting to blank array.');
+	// 			dir.setContent([]);
+	// 		}
+	// 		dir.addFile(file);
+	// 	});
 
-		return dir;
-	}
+	// 	return dir;
+	// }
 
 	getStartupConfig() {
 		return this.config;
 	}
 
-	getJFSRoot() {
-		return this.loadJFS();
-	}
+	// getJFSRoot() {
+	// 	return this.loadJFS();
+	// }
 }

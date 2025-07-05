@@ -1,44 +1,42 @@
-import { jfsUpdated } from "../../../model/BrowserModel.js";
 import { JFSFile, JFSType } from "./JFSFile.js";
 export class JFSDirectory extends JFSFile {
-    constructor(name, parent) {
-        super(name, [], parent, JFSType.Directory);
+    files = [];
+    constructor(name, address, parent) {
+        super(name, JFSType.Directory, address, parent);
     }
     toString(depth = 0, i = 0) {
         if (depth === -1)
             depth = Infinity;
-        let str = this.getName() + '/';
+        let str = this.name + '/';
         if (depth === i)
             return str;
-        const data = this.getContent();
-        for (let d of data) {
-            str += `\n${'    '.repeat(i + 1) + d.toString(depth, i + 1)}`;
+        for (let f of this.files) {
+            let s = f instanceof JFSDirectory ? f.toString(depth, i + 1) : f.toString();
+            str += `\n${'    '.repeat(i + 1) + s}`;
         }
         return str;
     }
     hasFile(name) {
-        return this.getContent()
-            .filter((f) => f.getName() === name)
+        return this.files
+            .filter((f) => f.name === name)
             .length > 0;
     }
     addFile(file) {
-        if (!file.getName())
+        if (!file.name)
             return; // invalid file
-        if (this.hasFile(file.getName()))
+        if (this.hasFile(file.name))
             return; // file exists
-        file.setParent(this);
-        this.getContent().push(file);
-        jfsUpdated();
+        file.parent = this;
+        this.files.push(file);
+        // jfsUpdated();
     }
     removeFile(name) {
-        if (!name)
+        if (!this.hasFile(name))
             return;
-        let f = this.getContent().filter((f) => f.getName() === name)[0];
-        if (!f)
-            return;
-        f.setParent(undefined);
-        let i = this.getContent().indexOf(f);
-        this.getContent().splice(i, 1);
-        jfsUpdated();
+        let f = this.files.filter((f) => f.name === name)[0];
+        f.parent = null;
+        let i = this.files.indexOf(f);
+        this.files.splice(i, 1);
+        // jfsUpdated();
     }
 }

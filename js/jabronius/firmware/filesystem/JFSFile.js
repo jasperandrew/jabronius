@@ -6,25 +6,14 @@ export var JFSType;
 })(JFSType || (JFSType = {}));
 export class JFSFile {
     name;
-    content;
-    parent;
     type;
-    constructor(name, content, // TODO: restrict/codify data type?
-    parent, type = JFSType.Data) {
+    address;
+    parent;
+    constructor(name, type = JFSType.Data, address, parent) {
         this.name = name;
-        this.content = content;
-        this.parent = parent;
         this.type = type;
+        this.address = address;
+        this.parent = parent;
     }
-    getName() { return this.name; }
-    getType() { return this.type; }
-    getParent() { return this.parent; }
-    getContent() { return this.content; }
-    setName(s) { this.name = s; }
-    ;
-    setParent(f) { this.parent = f; }
-    ;
-    setContent(d) { this.content = d; }
-    ;
-    toString() { return `${this.name}*`; }
+    toString() { return this.name; }
 }

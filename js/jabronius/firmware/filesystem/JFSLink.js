@@ -1,7 +1,7 @@
 import { JFSFile, JFSType } from "./JFSFile.js";
 export class JFSLink extends JFSFile {
-    constructor(name, path, parent) {
-        super(name, path, parent, JFSType.Link);
+    constructor(name, address, parent) {
+        super(name, address, JFSType.Link, parent);
     }
-    toString() { return this.getName() + ' -> ' + this.getContent(); }
+    toString() { return this.name + ' -> '; } // todo
 }

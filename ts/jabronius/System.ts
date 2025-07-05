@@ -5,14 +5,16 @@ import { Keyboard } from "./hardware/Keyboard.js";
 import { Monitor } from "./hardware/Monitor.js";
 import { Processor } from "./hardware/Processor.js";
 import { ViewModel } from "../model/ViewModel.js";
+import { Drive } from "./hardware/Drive.js";
 
 export class System {
 	private readonly browserModel: BrowserModel = new BrowserModel();
 
+	private readonly drive: Drive = new Drive();
 	private readonly monitor: Monitor = new Monitor();
 	private readonly keyboard: Keyboard = new Keyboard();
-	private readonly filesys: JFileSystem = new JFileSystem(this.browserModel.getJFSRoot());
-	private readonly shell: Shell = new Shell(this, this.filesys, '/home/jasper');
+	private readonly filesys: JFileSystem = new JFileSystem(this.drive);
+	private readonly shell: Shell = new Shell(this, this.filesys, this.drive, '/home/jasper');
 	private readonly cpu: Processor = new Processor(this, this.shell, this.filesys);
 	
 	private readonly viewModel: ViewModel = new ViewModel(this.shell, this.monitor, this.keyboard);

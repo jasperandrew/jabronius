@@ -1,9 +1,10 @@
 import { ModCtrl } from "../hardware/Keyboard.js";
 import { JFSType } from "./filesystem/JFSFile.js";
 export class Shell {
-    _sys;
-    _filesys;
-    _dirPath;
+    sys;
+    filesys;
+    drive;
+    dirPath;
     _printing = false;
     _print_queue = [];
     _print_delay = true;
@@ -31,31 +32,32 @@ export class Shell {
         }, setLvl = (n) => { _lvl = n; };
         return { nav: nav, add: add, setLvl: setLvl };
     })();
-    constructor(_sys, _filesys, _dirPath = '/') {
-        this._sys = _sys;
-        this._filesys = _filesys;
-        this._dirPath = _dirPath;
+    constructor(sys, filesys, drive, dirPath = '/') {
+        this.sys = sys;
+        this.filesys = filesys;
+        this.drive = drive;
+        this.dirPath = dirPath;
     }
     _getAbsolutePath(path) {
         if (path?.startsWith('/'))
             return path;
-        return this._dirPath + (path ? `/${path}` : '');
+        return this.dirPath + (path ? `/${path}` : '');
     }
     _verifyDir(file) {
-        if (file?.getType() !== JFSType.Directory) {
+        if (file?.type !== JFSType.Directory) {
             return null;
         }
         return file;
     }
     _fireFrameUpdated(promptOnly) {
-        this._sys.updateFrame(promptOnly);
+        this.sys.updateFrame(promptOnly);
     }
     _builtin = {
         cd: (args) => {
             let path = args[1] ?? '.', dir = this.resolveDir(path);
             if (!dir)
                 return false;
-            this._dirPath = this._filesys.getFilePath(dir);
+            this.dirPath = this.filesys.getFilePath(dir);
             return true;
         }
     };
@@ -91,16 +93,20 @@ export class Shell {
     _runScript(args, dir = '/scr') {
         const name = args[0];
         const cmdPath = dir + `/${name}`;
-        let file = this._filesys.getFile(cmdPath);
+        let file = this.filesys.getFile(cmdPath);
         if (!file) {
             this.error(`${name}: command not found`);
             return;
         }
-        if (file.getType() === JFSType.Directory) {
+        if (file.type === JFSType.Directory) {
             this.error(`${name}: is a directory`);
             return;
         }
-        this._sys.execScript(file.getContent(), args);
+        let script = this.filesys.readFile(file);
+        console.log(file, script);
+        if (!script)
+            return;
+        this.sys.execScript(script, args);
     }
     error(msg) {
         this.print('[!] ' + msg);
@@ -165,7 +171,7 @@ export class Shell {
         this._buffer = '';
         this._fireFrameUpdated(false);
     }
-    resolveFile(path) { return this._filesys.getFile(this._getAbsolutePath(path)); }
+    resolveFile(path) { return this.filesys.getFile(this._getAbsolutePath(path)); }
     resolveDir(path) { return this._verifyDir(this.resolveFile(path)); }
 }
 const parseArgs = (str) => {

@@ -1,13 +1,66 @@
 import { JFSDirectory } from "./JFSDirectory.js";
-import { JFSFile, JFSType } from "./JFSFile.js";
+import { JFSRoot } from "./JFSRoot.js";
+import { JFSType } from "./JFSFile.js";
 import { JFSLink } from "./JFSLink.js";
+import { JFSData } from "./JFSData.js";
 const DEFAULT_PATH_RESOLVE = true;
 const DEFAULT_PATH_MKDIRS = false;
 const DEFAULT_PATH_TOUCH = false;
 export class JFileSystem {
+    drive;
     root;
-    constructor(root) {
-        this.root = root;
+    constructor(drive) {
+        this.drive = drive;
+        this.root = this.readFromDisk();
+        console.log(this.root);
+    }
+    writeToDisk = () => {
+        this.drive.writeFileStructure(this.root);
+    };
+    readFromDisk() {
+        try {
+            return this.parseJFSDir(JSON.parse(this.drive.readFileStructure()));
+        }
+        catch (err) {
+            console.log('JFS parse failed', err);
+            return new JFSRoot();
+        }
+    }
+    parseJFSDir(dirFiles, dir) {
+        if (!dir)
+            dir = new JFSRoot();
+        dirFiles.forEach(f => {
+            if (!f) {
+                console.error('import file invalid');
+                return;
+            }
+            let file;
+            switch (f.type) {
+                case JFSType.Data: {
+                    file = new JFSData(f.name, f.address, dir);
+                    break;
+                }
+                case JFSType.Directory: {
+                    if (!f.files) {
+                        console.error('dir files undefined');
+                        return;
+                    }
+                    file = this.parseJFSDir(f.files, new JFSDirectory(f.name, f.address, dir));
+                    break;
+                }
+                case JFSType.Link: {
+                    file = new JFSLink(f.name, f.address, dir);
+                    break;
+                }
+                default: return;
+            }
+            if (!dir) {
+                console.error('dir undefined');
+                return;
+            }
+            dir.addFile(file);
+        });
+        return dir;
     }
     getPathList(path) {
         if (!path)
@@ -21,25 +74,15 @@ export class JFileSystem {
     resolveRelativePath(file, pathList, config) {
         let resolve = config.resolve ?? DEFAULT_PATH_RESOLVE, mkdirs = config.mkdirs ?? DEFAULT_PATH_MKDIRS, touch = config.touch ?? DEFAULT_PATH_TOUCH, type = config.type ?? JFSType.Data, parent = config.parent, name = config.name;
         if (!pathList.length) {
-            if (resolve && file?.getType() === JFSType.Link)
+            if (resolve && file?.type === JFSType.Link)
                 return this.resolvePathFromLink(file, [], config);
             if (touch && parent && name) {
-                switch (type) {
-                    case JFSType.Data:
-                        file = new JFSFile(name, null, parent);
-                        break;
-                    case JFSType.Directory:
-                        file = new JFSDirectory(name, parent);
-                        break;
-                    case JFSType.Link:
-                        file = new JFSLink(name, '.', parent);
-                        break;
-                }
+                file = this.drive.createFile(name, type, parent);
                 parent.addFile(file);
             }
             return file;
         }
-        switch (file?.getType()) {
+        switch (file?.type) {
             case JFSType.Directory: {
                 return this.resolvePathFromFolder(file, pathList, config);
             }
@@ -52,7 +95,7 @@ export class JFileSystem {
             }
         }
         if (mkdirs && parent && name) {
-            let newDir = new JFSDirectory(name, parent);
+            let newDir = this.drive.createFile(name, JFSType.Directory, parent);
             parent.addFile(newDir);
             return this.resolvePathFromFolder(newDir, pathList, config);
         }
@@ -66,15 +109,17 @@ export class JFileSystem {
             return this.resolvePathFromFolder(dir, pathList, config);
         }
         if (next === '..') {
-            return this.resolvePathFromFolder(dir ? dir.getParent() : null, pathList, config);
+            return this.resolvePathFromFolder(dir ? dir.parent : null, pathList, config);
         }
-        let nextFile = dir?.getContent().filter((f) => f.getName() === next)[0];
+        let nextFile = dir?.files.filter((f) => f.name === next)[0];
         config.parent = dir;
         config.name = next;
         return this.resolveRelativePath(nextFile, pathList, config);
     }
     resolvePathFromLink(link, pathList, config) {
-        let newPath = link.getContent();
+        let newPath = this.readFile(link);
+        if (!newPath)
+            return null;
         if (pathList.length)
             newPath += '/' + pathList.join('/');
         return this.resolveAbsolutePath(this.getPathList(newPath), config);
@@ -88,11 +133,11 @@ export class JFileSystem {
     getFilePath(file) {
         if (file === this.root)
             return '/';
-        const parent = file.getParent();
+        const parent = file.parent;
         if (parent === null)
-            return file.getName();
+            return file.name;
         const parentName = this.getFilePath(parent);
-        return parentName + (parentName === '/' ? '' : '/') + file.getName();
+        return parentName + (parentName === '/' ? '' : '/') + file.name;
     }
     createFile(filePath, fileType = JFSType.Data, mkdirs = true) {
         return this.resolveAbsolutePath(this.getPathList(filePath), {
@@ -102,6 +147,14 @@ export class JFileSystem {
         });
     }
     removeFile(file) {
-        file?.getParent()?.removeFile(file.getName());
+        file?.parent?.removeFile(file.name);
+    }
+    readFile(file) {
+        if (!file?.address)
+            return null;
+        const data = this.drive.readFile(file?.address);
+        if (!data)
+            return null;
+        return data?.substring(data.indexOf('|') + 1);
     }
 }

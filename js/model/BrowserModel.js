@@ -1,7 +1,3 @@
-import { JFSDirectory } from "../jabronius/firmware/filesystem/JFSDirectory.js";
-import { JFSFile, JFSType } from "../jabronius/firmware/filesystem/JFSFile.js";
-import { JFSLink } from "../jabronius/firmware/filesystem/JFSLink.js";
-import { JFSRoot } from "../jabronius/firmware/filesystem/JFSRoot.js";
 const isTruthy = (s) => ['1', 'true', 'yes', 'yep', 'on'].includes(s);
 const isFalsey = (s) => ['0', 'false', 'no', 'nope', 'off'].includes(s);
 let jfsUpdateCallback = null;
@@ -19,7 +15,7 @@ export class BrowserModel {
         if (urlConfig && JSON.stringify(this.config) !== JSON.stringify(urlConfig)) {
             this.config = urlConfig;
         }
-        jfsUpdateCallback = this.storeJFS;
+        // jfsUpdateCallback = this.storeJFS;
     }
     parseInitConfigURL = () => {
         const url = window.location.href;
@@ -57,72 +53,72 @@ export class BrowserModel {
         return urlConfig;
     };
     jfsRoot = null;
-    loadJFS(reset) {
-        try {
-            const jfs = reset ? JFS_ROOT : JSON.parse(localStorage.getItem(JFS_JSON_KEY));
-            this.jfsRoot = this.parseJFSDir(jfs ?? JFS_ROOT);
-            if (reset)
-                this.storeJFS();
-            // recover if scr directory is deleted, until a reset is added
-            if (this.jfsRoot.getContent().filter((f) => f.getName() === 'scr')[0])
-                return this.jfsRoot;
-            console.log('no scr dir, resetting JFS');
-        }
-        catch (err) {
-            console.log('JFS parse failed', err);
-        }
-        this.jfsRoot = this.parseJFSDir(JFS_ROOT);
-        this.storeJFS();
-        return this.jfsRoot;
-    }
-    storeJFS = () => {
-        if (!this.jfsRoot?.getContent()) {
-            localStorage.removeItem(JFS_JSON_KEY);
-            return;
-        }
-        localStorage.setItem(JFS_JSON_KEY, JSON.stringify(this.jfsRoot.getContent(), (k, v) => k === 'parent' ? undefined : v));
-    };
-    parseJFSDir(dirObj, dir) {
-        if (!dir)
-            dir = new JFSRoot();
-        dirObj.forEach(f => {
-            if (!f) {
-                console.error('import file invalid');
-                return;
-            }
-            const name = f['name'], type = f['type'], content = f['content'];
-            let file;
-            switch (type) {
-                case JFSType.Data: {
-                    file = new JFSFile(name, content, dir);
-                    break;
-                }
-                case JFSType.Directory: {
-                    file = this.parseJFSDir(content, new JFSDirectory(name, dir));
-                    break;
-                }
-                case JFSType.Link: {
-                    file = new JFSLink(name, content, dir);
-                    break;
-                }
-                default: return;
-            }
-            if (!dir) {
-                console.error('dir undefined');
-                return;
-            }
-            if (typename(dir.getContent()) !== 'Array') {
-                console.error('dir contents not an array. setting to blank array.');
-                dir.setContent([]);
-            }
-            dir.addFile(file);
-        });
-        return dir;
-    }
+    // private loadJFS(reset?: boolean): JFSRoot {
+    // 	try {
+    // 		const jfs = reset ? JFS_ROOT : JSON.parse(localStorage.getItem(JFS_JSON_KEY)!!);
+    // 		this.jfsRoot = this.parseJFSDir(jfs ?? JFS_ROOT);
+    // 		if (reset) this.storeJFS();
+    // 		// recover if scr directory is deleted, until a reset is added
+    // 		if (this.jfsRoot.getContent().filter((f: JFSFile) => f.getName() === 'scr')[0]) return this.jfsRoot;
+    // 		console.log('no scr dir, resetting JFS');
+    // 	} catch (err) {
+    // 		console.log('JFS parse failed', err);
+    // 	}
+    // 	this.jfsRoot = this.parseJFSDir(JFS_ROOT);
+    // 	this.storeJFS();
+    // 	return this.jfsRoot;
+    // }
+    // private storeJFS = () => {
+    // 	if (!this.jfsRoot?.getContent()) {
+    // 		localStorage.removeItem(JFS_JSON_KEY);
+    // 		return;
+    // 	}
+    // 	localStorage.setItem(
+    // 		JFS_JSON_KEY,
+    // 		JSON.stringify(
+    // 			this.jfsRoot.getContent(),
+    // 			(k, v) => k === 'parent' ? undefined : v)
+    // 	);
+    // }
+    // private parseJFSDir(dirObj: any[], dir?: JFSDirectory) { // TODO: replace this whole system, eventually
+    // 	if (!dir) dir = new JFSRoot();
+    // 	dirObj.forEach(f => {
+    // 		if (!f) {
+    // 			console.error('import file invalid');
+    // 			return;
+    // 		}
+    // 		const name = f['name'],
+    // 			type = f['type'],
+    // 			content = f['content'];
+    // 		let file;
+    // 		switch (type) {
+    // 			case JFSType.Data: {
+    // 				file = new JFSFile(name, content, dir);
+    // 				break;
+    // 			}
+    // 			case JFSType.Directory: {
+    // 				file = this.parseJFSDir(content, new JFSDirectory(name, dir));
+    // 				break;
+    // 			}
+    // 			case JFSType.Link: {
+    // 				file = new JFSLink(name, content, dir);
+    // 				break;
+    // 			}
+    // 			default: return;
+    // 		}
+    // 		if (!dir) {
+    // 			console.error('dir undefined');
+    // 			return;
+    // 		}
+    // 		if (typename(dir.getContent()) !== 'Array') {
+    // 			console.error('dir contents not an array. setting to blank array.');
+    // 			dir.setContent([]);
+    // 		}
+    // 		dir.addFile(file);
+    // 	});
+    // 	return dir;
+    // }
     getStartupConfig() {
         return this.config;
-    }
-    getJFSRoot() {
-        return this.loadJFS();
     }
 }

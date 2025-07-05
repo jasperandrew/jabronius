@@ -1,3 +1,4 @@
+import { Drive } from "../hardware/Drive.js";
 import { KeyInputSignal, ModCtrl } from "../hardware/Keyboard.js";
 import { System } from "../System.js";
 import { JFileSystem } from "./filesystem/JFileSystem.js";
@@ -38,18 +39,19 @@ export class Shell {
 	})();
 
 	constructor(
-		private readonly _sys: System,
-		private readonly _filesys: JFileSystem,
-		private _dirPath = '/'
+		private readonly sys: System,
+		private readonly filesys: JFileSystem,
+		private readonly drive: Drive,
+		private dirPath = '/'
 	) {}
 
 	private _getAbsolutePath(path: string) {
 		if (path?.startsWith('/')) return path;
-		return this._dirPath + (path ? `/${path}` : '');
+		return this.dirPath + (path ? `/${path}` : '');
 	}
 
 	private _verifyDir(file: JFSFile | null) {
-		if (file?.getType() !== JFSType.Directory) {
+		if (file?.type !== JFSType.Directory) {
 			return null;
 		}
 
@@ -57,7 +59,7 @@ export class Shell {
 	}
 
 	private _fireFrameUpdated(promptOnly: boolean) {
-		this._sys.updateFrame(promptOnly);
+		this.sys.updateFrame(promptOnly);
 	}
 
 	private _builtin: any = { // TODO: improve this structure
@@ -67,7 +69,7 @@ export class Shell {
 
 			if (!dir) return false;
 
-			this._dirPath = this._filesys.getFilePath(dir);
+			this.dirPath = this.filesys.getFilePath(dir);
 			return true;
 		}
 	}
@@ -108,19 +110,22 @@ export class Shell {
 		const name = args[0];
 		const cmdPath = dir + `/${name}`;
 
-		let file = this._filesys.getFile(cmdPath);
+		let file = this.filesys.getFile(cmdPath);
 
 		if (!file) {
 			this.error(`${name}: command not found`);
 			return;
 		}
 		
-		if (file.getType() === JFSType.Directory) {
+		if (file.type === JFSType.Directory) {
 			this.error(`${name}: is a directory`);
 			return;
 		}
 
-		this._sys.execScript(file.getContent(), args);
+		let script = this.filesys.readFile(file);
+		console.log(file,script);
+		if (!script) return;
+		this.sys.execScript(script, args);
 	}
 
 	error(msg: string) {
@@ -189,7 +194,7 @@ export class Shell {
 		this._fireFrameUpdated(false);
 	}
 
-	resolveFile(path: string) { return this._filesys.getFile(this._getAbsolutePath(path)); }
+	resolveFile(path: string) { return this.filesys.getFile(this._getAbsolutePath(path)); }
 	resolveDir(path: string) { return this._verifyDir(this.resolveFile(path)); }
 }
 
