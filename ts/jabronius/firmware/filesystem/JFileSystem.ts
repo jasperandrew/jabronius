@@ -1,7 +1,7 @@
-import { JFile, JFileType } from './struct/JFile.js';
-import { JDirectory } from './struct/JDirectory.js';
-import { JDirectoryRoot } from './struct/JDirectoryRoot.js';
-import { JLink } from './struct/JLink.js';
+import { JFSDirectory } from "./JFSDirectory.js";
+import { JFSRoot } from "./JFSRoot.js";
+import { JFSFile, JFSType } from "./JFSFile.js";
+import { JFSLink } from "./JFSLink.js";
 
 const DEFAULT_PATH_RESOLVE = true;
 const DEFAULT_PATH_MKDIRS = false;
@@ -11,8 +11,8 @@ interface ResolveConfig {
 	resolve?: boolean;
 	mkdirs?: boolean;
 	touch?: boolean;
-	type?: JFileType;
-	parent?: JDirectory | null;
+	type?: JFSType;
+	parent?: JFSDirectory | null;
 	name?: string;
 }
 
@@ -21,8 +21,8 @@ export function jfsUpdated() {
 	jfsUpdateCallback?.call(null);
 }
 
-export class FileSystem {
-	private readonly root = new JDirectoryRoot();
+export class JFileSystem {
+	private readonly root = new JFSRoot();
 
 	constructor() {
 		jfsUpdateCallback = this.jfsUpdated;
@@ -37,7 +37,7 @@ export class FileSystem {
 					console.log('no scripts, resetting');
 					JFS_JSON = null;
 				}
-			} catch(err) {
+			} catch (err) {
 				console.log('local JFS import failed', err);
 				JFS_JSON = null;
 			}
@@ -53,7 +53,7 @@ export class FileSystem {
 			'jfs_json',
 			JSON.stringify(
 				this.root.getContent(),
-				(k,v) => k === 'parent' ? undefined : v)
+				(k, v) => k === 'parent' ? undefined : v)
 		);
 	}
 
@@ -63,27 +63,27 @@ export class FileSystem {
 		return pathList.filter(name => name);
 	}
 
-	private resolveAbsolutePath(pathList: string[], config: any): JFile | null {
+	private resolveAbsolutePath(pathList: string[], config: any): JFSFile | null {
 		return this.resolveRelativePath(this.root, pathList, config);
 	}
 
-	private resolveRelativePath(file: JFile | null, pathList: string[], config: ResolveConfig): JFile | null {
+	private resolveRelativePath(file: JFSFile | null, pathList: string[], config: ResolveConfig): JFSFile | null {
 		let resolve = config.resolve ?? DEFAULT_PATH_RESOLVE,
 			mkdirs = config.mkdirs ?? DEFAULT_PATH_MKDIRS,
 			touch = config.touch ?? DEFAULT_PATH_TOUCH,
-			type = config.type ?? JFileType.Data,
+			type = config.type ?? JFSType.Data,
 			parent = config.parent,
 			name = config.name;
-		
+
 		if (!pathList.length) {
-			if (resolve && file?.getType() === JFileType.Link)
+			if (resolve && file?.getType() === JFSType.Link)
 				return this.resolvePathFromLink(file, [], config);
 
 			if (touch && parent && name) {
 				switch (type) {
-					case JFileType.Data: file = new JFile(name, null, parent); break;
-					case JFileType.Directory: file = new JDirectory(name, parent); break;
-					case JFileType.Link: file = new JLink(name, '.', parent); break;
+					case JFSType.Data: file = new JFSFile(name, null, parent); break;
+					case JFSType.Directory: file = new JFSDirectory(name, parent); break;
+					case JFSType.Link: file = new JFSLink(name, '.', parent); break;
 				}
 				parent.addFile(file);
 			}
@@ -91,20 +91,20 @@ export class FileSystem {
 		}
 
 		switch (file?.getType()) {
-			case JFileType.Directory: {
-				return this.resolvePathFromFolder(file as JDirectory | null, pathList, config);
+			case JFSType.Directory: {
+				return this.resolvePathFromFolder(file as JFSDirectory | null, pathList, config);
 			}
-			case JFileType.Link: {
+			case JFSType.Link: {
 				return this.resolvePathFromLink(file, pathList, config);
 			}
-			case JFileType.Data: {
+			case JFSType.Data: {
 				// todo: throw error?
 				return null;
 			}
 		}
 
 		if (mkdirs && parent && name) {
-			let newDir = new JDirectory(name, parent);
+			let newDir = new JFSDirectory(name, parent);
 			parent.addFile(newDir);
 			return this.resolvePathFromFolder(newDir, pathList, config);
 		}
@@ -112,7 +112,7 @@ export class FileSystem {
 		return null;
 	}
 
-	private resolvePathFromFolder(dir: JDirectory | null, pathList: string[], config: any): JFile | null { // TODO: better null dir hancling?
+	private resolvePathFromFolder(dir: JFSDirectory | null, pathList: string[], config: any): JFSFile | null { // TODO: better null dir hancling?
 		const next = pathList.shift();
 		if (next === undefined) return dir;
 		if (next === '.') {
@@ -121,19 +121,19 @@ export class FileSystem {
 		if (next === '..') {
 			return this.resolvePathFromFolder(dir ? dir.getParent() : null, pathList, config);
 		}
-		let nextFile = dir?.getContent().filter((f: JFile) => f.getName() === next)[0];
+		let nextFile = dir?.getContent().filter((f: JFSFile) => f.getName() === next)[0];
 		config.parent = dir;
 		config.name = next;
 		return this.resolveRelativePath(nextFile, pathList, config);
 	}
 
-	private resolvePathFromLink(link: JLink, pathList: string[], config: any): JFile | null {
+	private resolvePathFromLink(link: JFSLink, pathList: string[], config: any): JFSFile | null {
 		let newPath = link.getContent();
 		if (pathList.length) newPath += '/' + pathList.join('/')
 		return this.resolveAbsolutePath(this.getPathList(newPath), config);
 	}
 
-	private importDir(dir: JDirectory, dirObj: any[]) { // TODO: replace this whole system, eventually
+	private importDir(dir: JFSDirectory, dirObj: any[]) { // TODO: replace this whole system, eventually
 		dirObj.forEach(f => {
 			if (!f) {
 				console.error('import file invalid');
@@ -144,17 +144,17 @@ export class FileSystem {
 				content = f['content'];
 			let file;
 			switch (type) {
-				case JFileType.Data: {
-					file = new JFile(name, content, dir);
+				case JFSType.Data: {
+					file = new JFSFile(name, content, dir);
 					break;
 				}
-				case JFileType.Directory: {
-					file = new JDirectory(name, dir);
+				case JFSType.Directory: {
+					file = new JFSDirectory(name, dir);
 					this.importDir(file, content);
 					break;
 				}
-				case JFileType.Link: {
-					file = new JLink(name, content, dir);
+				case JFSType.Link: {
+					file = new JFSLink(name, content, dir);
 					break;
 				}
 				default: return;
@@ -163,12 +163,12 @@ export class FileSystem {
 		});
 	}
 
-	private addSubFile(dir: JDirectory, file: JFile) {
+	private addSubFile(dir: JFSDirectory, file: JFSFile) {
 		if (!dir) {
 			console.error('invalid dir');
 			return;
 		}
-		if (typeof(dir.getContent()) !== 'object') {
+		if (typeof (dir.getContent()) !== 'object') {
 			console.error('dir contents invalid. making it a blank array.');
 			dir.setContent([]);
 		}
@@ -177,12 +177,12 @@ export class FileSystem {
 
 	getRoot() { return this.root; }
 
-	getFile(filePath: string, config?: ResolveConfig): JFile | null {
+	getFile(filePath: string, config?: ResolveConfig): JFSFile | null {
 		if (!config) config = {};
 		return this.resolveAbsolutePath(this.getPathList(filePath), config);
 	}
 
-	getFilePath(file: JFile): string {
+	getFilePath(file: JFSFile): string {
 		if (file === this.root) return '/';
 		const parent = file.getParent();
 		if (parent === null) return file.getName();
@@ -190,7 +190,7 @@ export class FileSystem {
 		return parentName + (parentName === '/' ? '' : '/') + file.getName();
 	}
 
-	createFile(filePath: string, fileType = JFileType.Data, mkdirs = true) {
+	createFile(filePath: string, fileType = JFSType.Data, mkdirs = true) {
 		return this.resolveAbsolutePath(this.getPathList(filePath), {
 			mkdirs: mkdirs,
 			touch: true,
@@ -198,7 +198,7 @@ export class FileSystem {
 		});
 	}
 
-	removeFile(file: JFile) {
+	removeFile(file: JFSFile) {
 		file?.getParent()?.removeFile(file.getName());
 	}
 }

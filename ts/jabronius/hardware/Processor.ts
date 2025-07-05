@@ -1,12 +1,12 @@
+import { JFileSystem } from "../firmware/filesystem/JFileSystem.js";
+import { Shell } from "../firmware/Shell.js";
 import { System } from "../System.js";
-import { FileSystem } from '../firmware/JFileSystem.js';
-import { Shell } from '../firmware/Shell.js';
 
 export class Processor {
 	constructor(
 		private readonly sys: System,
 		private readonly shell: Shell,
-		private readonly filesys: FileSystem
+		private readonly filesys: JFileSystem
 	) {}
 
 	execute(script: string, args: string[], input: string | null, outFn: Function, errFn: Function) {

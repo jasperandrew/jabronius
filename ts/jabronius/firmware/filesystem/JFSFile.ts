@@ -1,15 +1,15 @@
-import { JDirectory } from "./JDirectory.js";
+import { JFSDirectory } from "./JFSDirectory.js";
 
-export enum JFileType {
+export enum JFSType {
 	Data, Directory, Link
 }
 
-export class JFile {
+export class JFSFile {
 	constructor(
 		private name: string,
 		private content: any, // TODO: restrict/codify data type?
-		private parent: JDirectory | null,
-		private type: JFileType = JFileType.Data
+		private parent: JFSDirectory | null,
+		private type: JFSType = JFSType.Data
 	) {}
 	
 	getName() { return this.name; }
@@ -18,7 +18,7 @@ export class JFile {
 	getContent() { return this.content; }
 
 	setName(s: string) { this.name = s; };
-	setParent(f: JDirectory) { this.parent = f; };
+	setParent(f: JFSDirectory) { this.parent = f; };
 	setContent(d: any) { this.content = d; };
 
 	toString() { return `${this.name}*`; }

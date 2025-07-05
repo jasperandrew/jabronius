@@ -1,8 +1,8 @@
-import { jfsUpdated } from '../filesystem/JFileSystem.js';
-import { JFile, JFileType } from './JFile.js';
-export class JDirectory extends JFile {
+import { JFSFile, JFSType } from "./JFSFile.js";
+import { jfsUpdated } from "./JFileSystem.js";
+export class JFSDirectory extends JFSFile {
     constructor(name, parent) {
-        super(name, [], parent, JFileType.Directory);
+        super(name, [], parent, JFSType.Directory);
     }
     toString(depth = 0, i = 0) {
         if (depth === -1)

@@ -1,6 +1,6 @@
-import { Shell } from './firmware/Shell.js';
-import { KeyInputSignal, Keyboard } from './hardware/Keyboard.js';
-import { Monitor } from './hardware/Monitor.js';
+import { Shell } from "./firmware/Shell.js";
+import { Keyboard, KeyInputSignal } from "./hardware/Keyboard.js";
+import { Monitor } from "./hardware/Monitor.js";
 
 export interface InitConfig {
 	on: boolean;

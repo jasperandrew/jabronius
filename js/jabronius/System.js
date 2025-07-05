@@ -1,13 +1,13 @@
-import { FileSystem } from './firmware/JFileSystem.js';
-import { Shell } from './firmware/Shell.js';
-import { Keyboard } from './hardware/Keyboard.js';
-import { Monitor } from './hardware/Monitor.js';
-import { Processor } from './hardware/Processor.js';
-import { ViewModel } from './ViewModel.js';
+import { JFileSystem } from "./firmware/filesystem/JFileSystem.js";
+import { Shell } from "./firmware/Shell.js";
+import { Keyboard } from "./hardware/Keyboard.js";
+import { Monitor } from "./hardware/Monitor.js";
+import { Processor } from "./hardware/Processor.js";
+import { ViewModel } from "./ViewModel.js";
 export class System {
     monitor = new Monitor();
     keyboard = new Keyboard();
-    filesys = new FileSystem();
+    filesys = new JFileSystem();
     shell = new Shell(this, this.filesys, '/home/jasper');
     cpu = new Processor(this, this.shell, this.filesys);
     viewModel = new ViewModel(this.shell, this.monitor, this.keyboard);

@@ -1,6 +1,6 @@
-import { jfsUpdated } from '../filesystem/JFileSystem.js';
-import { JFile, JFileType } from './JFile.js';
-export class JDirectory extends JFile {
+import { JFile, JFileType } from "./JFile";
+import { jfsUpdated } from "./JFileSystem";
+export class JFSDirectory extends JFile {
     constructor(name, parent) {
         super(name, [], parent, JFileType.Directory);
     }

@@ -1,4 +1,4 @@
-import { KeyInputSignal } from './hardware/Keyboard.js';
+import { KeyInputSignal } from "./hardware/Keyboard.js";
 export class ViewModel {
     shell;
     config = {

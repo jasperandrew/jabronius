@@ -1,14 +1,14 @@
-import { FileSystem } from './firmware/JFileSystem.js';
-import { Shell } from './firmware/Shell.js';
-import { Keyboard } from './hardware/Keyboard.js';
-import { Monitor } from './hardware/Monitor.js';
-import { Processor } from './hardware/Processor.js';
-import { InitConfig, ViewModel } from './ViewModel.js';
+import { JFileSystem } from "./firmware/filesystem/JFileSystem.js";
+import { Shell } from "./firmware/Shell.js";
+import { Keyboard } from "./hardware/Keyboard.js";
+import { Monitor } from "./hardware/Monitor.js";
+import { Processor } from "./hardware/Processor.js";
+import { InitConfig, ViewModel } from "./ViewModel.js";
 
 export class System {
 	private readonly monitor: Monitor = new Monitor();
 	private readonly keyboard: Keyboard = new Keyboard();
-	private readonly filesys: FileSystem = new FileSystem();
+	private readonly filesys: JFileSystem = new JFileSystem();
 	private readonly shell: Shell = new Shell(this, this.filesys, '/home/jasper');
 	private readonly cpu: Processor = new Processor(this, this.shell, this.filesys);
 	private readonly viewModel: ViewModel = new ViewModel(this.shell, this.monitor, this.keyboard);

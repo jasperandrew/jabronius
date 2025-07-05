@@ -1,9 +1,9 @@
-import { jfsUpdated } from '../JFileSystem.js';
-import { JFile, JFileType } from './JFile.js';
+import { JFSFile, JFSType } from "./JFSFile.js";
+import { jfsUpdated } from "./JFileSystem.js";
 
-export class JDirectory extends JFile {
-	constructor(name: string, parent: JDirectory | null) {
-		super(name, [], parent, JFileType.Directory);
+export class JFSDirectory extends JFSFile {
+	constructor(name: string, parent: JFSDirectory | null) {
+		super(name, [], parent, JFSType.Directory);
 	}
 
 	toString(depth = 0, i = 0) {
@@ -19,11 +19,11 @@ export class JDirectory extends JFile {
 
 	hasFile(name: string) {
 		return this.getContent()
-			.filter((f: JFile) => f.getName() === name)
+			.filter((f: JFSFile) => f.getName() === name)
 			.length > 0;
 	}
 
-	addFile(file: JFile) {
+	addFile(file: JFSFile) {
 		if (!file.getName()) return; // invalid file
 		if (this.hasFile(file.getName())) return; // file exists
 
@@ -34,7 +34,7 @@ export class JDirectory extends JFile {
 
 	removeFile(name: string) {
 		if (!name) return;
-		let f = this.getContent().filter((f: JFile) => f.getName() === name)[0];
+		let f = this.getContent().filter((f: JFSFile) => f.getName() === name)[0];
 		if (!f) return;
 		f.setParent(undefined);
 		let i = this.getContent().indexOf(f);

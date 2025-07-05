@@ -11,7 +11,7 @@ function mobileCheck() {
         check = true; })(navigator.userAgent || navigator.vendor || window.opera);
     if (check)
         return true;
-    const toMatch = [
+    return [
         /Android/i,
         /webOS/i,
         /iPhone/i,
@@ -19,8 +19,7 @@ function mobileCheck() {
         /iPod/i,
         /BlackBerry/i,
         /Windows Phone/i
-    ];
-    return toMatch.some((toMatchItem) => navigator.userAgent.match(toMatchItem));
+    ].some((rgx) => navigator.userAgent.match(rgx));
 }
 function renderedTextLength(html) {
     const el = document.createElement('span');

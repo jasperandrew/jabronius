@@ -1,5 +1,5 @@
 import { ModCtrl } from "../hardware/Keyboard.js";
-import { JFileType } from "./struct/JFile.js";
+import { JFSType } from "./filesystem/JFSFile.js";
 export class Shell {
     _sys;
     _filesys;
@@ -42,7 +42,7 @@ export class Shell {
         return this._dirPath + (path ? `/${path}` : '');
     }
     _verifyDir(file) {
-        if (file?.getType() !== JFileType.Directory) {
+        if (file?.getType() !== JFSType.Directory) {
             return null;
         }
         return file;
@@ -96,7 +96,7 @@ export class Shell {
             this.error(`${name}: command not found`);
             return;
         }
-        if (file.getType() === JFileType.Directory) {
+        if (file.getType() === JFSType.Directory) {
             this.error(`${name}: is a directory`);
             return;
         }

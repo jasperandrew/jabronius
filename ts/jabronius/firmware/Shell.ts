@@ -1,7 +1,7 @@
 import { KeyInputSignal, ModCtrl } from "../hardware/Keyboard.js";
 import { System } from "../System.js";
-import { FileSystem } from "./JFileSystem.js";
-import { JFile, JFileType } from "./struct/JFile.js";
+import { JFileSystem } from "./filesystem/JFileSystem.js";
+import { JFSFile, JFSType } from "./filesystem/JFSFile.js";
 
 export class Shell {
 	private _printing = false;
@@ -39,7 +39,7 @@ export class Shell {
 
 	constructor(
 		private readonly _sys: System,
-		private readonly _filesys: FileSystem,
+		private readonly _filesys: JFileSystem,
 		private _dirPath = '/'
 	) {}
 
@@ -48,8 +48,8 @@ export class Shell {
 		return this._dirPath + (path ? `/${path}` : '');
 	}
 
-	private _verifyDir(file: JFile | null) {
-		if (file?.getType() !== JFileType.Directory) {
+	private _verifyDir(file: JFSFile | null) {
+		if (file?.getType() !== JFSType.Directory) {
 			return null;
 		}
 
@@ -115,7 +115,7 @@ export class Shell {
 			return;
 		}
 		
-		if (file.getType() === JFileType.Directory) {
+		if (file.getType() === JFSType.Directory) {
 			this.error(`${name}: is a directory`);
 			return;
 		}
