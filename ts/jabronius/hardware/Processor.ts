@@ -18,17 +18,20 @@ export class Processor {
 			const f = new Function('SYS','SHELL','FS','ARGS','IN','OUT','ERR', script);
 			return f(this.sys, this.shell, this.filesys, args, IN, OUT, ERR);
 		} catch (e) {
-			const err = e as any;
-			let msg = err?.name;
-			if (err?.lineNumber) {
-				msg += ` (${err?.lineNumber}`;
-				if (err?.columnNumber) msg += `,${err?.columnNumber}`;
-				msg += ')';
-			}
-			msg += `: ${err?.message}`;
-			ERR(msg);
+			ERR(buildErrorMessage(e));
 			console.error(e);
 			return false;
 		}
 	};
+}
+
+function buildErrorMessage(err: any) {
+	let msg = err?.name;
+	if (err?.lineNumber) {
+		msg += ` (${err?.lineNumber}`;
+		if (err?.columnNumber) msg += `,${err?.columnNumber}`;
+		msg += ')';
+	}
+	msg += `: ${err?.message}`;
+	return msg;
 }

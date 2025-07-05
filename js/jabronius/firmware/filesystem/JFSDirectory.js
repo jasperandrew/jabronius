@@ -1,5 +1,5 @@
+import { jfsUpdated } from "../../../model/BrowserModel.js";
 import { JFSFile, JFSType } from "./JFSFile.js";
-import { jfsUpdated } from "./JFileSystem.js";
 export class JFSDirectory extends JFSFile {
     constructor(name, parent) {
         super(name, [], parent, JFSType.Directory);

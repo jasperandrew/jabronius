@@ -1,4 +1,4 @@
-import { KeyInputSignal } from "./hardware/Keyboard.js";
+import { KeyInputSignal } from "../jabronius/hardware/Keyboard.js";
 export class ViewModel {
     shell;
     displayElem = document.querySelector('#display');

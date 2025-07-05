@@ -1,38 +1,37 @@
+import { BrowserModel, StartupConfig } from "../model/BrowserModel.js";
 import { JFileSystem } from "./firmware/filesystem/JFileSystem.js";
 import { Shell } from "./firmware/Shell.js";
 import { Keyboard } from "./hardware/Keyboard.js";
 import { Monitor } from "./hardware/Monitor.js";
 import { Processor } from "./hardware/Processor.js";
-import { InitConfig, ViewModel } from "./ViewModel.js";
+import { ViewModel } from "../model/ViewModel.js";
 
 export class System {
+	private readonly browserModel: BrowserModel = new BrowserModel();
+
 	private readonly monitor: Monitor = new Monitor();
 	private readonly keyboard: Keyboard = new Keyboard();
-	private readonly filesys: JFileSystem = new JFileSystem();
+	private readonly filesys: JFileSystem = new JFileSystem(this.browserModel.getJFSRoot());
 	private readonly shell: Shell = new Shell(this, this.filesys, '/home/jasper');
 	private readonly cpu: Processor = new Processor(this, this.shell, this.filesys);
+	
 	private readonly viewModel: ViewModel = new ViewModel(this.shell, this.monitor, this.keyboard);
 
 	constructor() {
-		let config = this.viewModel.getConfig();
+		let config = this.browserModel.getStartupConfig();
 		if (config.on) this.monitor.togglePower();
 
 		this.startup(config);
 	}
 
-	private out = (tag: string, str: string) => {
-		this.shell.print(str);
-	}
-
-	private err = (tag: string, str: string) => {
-		this.shell.error(str);
-	}
-
 	execScript(script: string, args: string[]) {
-		this.cpu.execute(script, args, null, this.out, this.err);
+		this.cpu.execute(script, args, null,
+			(tag: string, str: string) => this.shell.print(str),
+			(tag: string, str: string) => this.shell.error(str)
+		);
 	}
 
-	startup(config: InitConfig) {
+	startup(config: StartupConfig) {
 		this.shell.clearBuffer();
 		if (mobileCheck()) {
 			this.shell.run('echo Currently, JaBRONIUS is only compatible with desktop browsers.');

@@ -1,22 +1,12 @@
-import { Shell } from "./firmware/Shell.js";
-import { Keyboard, KeyInputSignal } from "./hardware/Keyboard.js";
-import { Monitor } from "./hardware/Monitor.js";
-
-export interface InitConfig {
-	on: boolean;
-	commands: string[];
-}
+import { Shell } from "../jabronius/firmware/Shell.js";
+import { Keyboard, KeyInputSignal } from "../jabronius/hardware/Keyboard.js";
+import { Monitor } from "../jabronius/hardware/Monitor.js";
 
 export type MouseEventHandler    = (ev: MouseEvent)    => any | null;
 export type KeyboardEventHandler = (ev: KeyboardEvent) => any | null;
 export type FocusEventHandler    = (ev: FocusEvent)    => any | null;
 
 export class ViewModel {
-	private readonly config: InitConfig = {
-		on: true,
-		commands: ['welcome']
-	};
-
 	private readonly displayElem = document.querySelector('#display')!!;
 	private readonly lightElem = document.querySelector('#light')!!;
 	private readonly lineElems: Array<HTMLSpanElement> = [];
@@ -27,8 +17,6 @@ export class ViewModel {
 		monitor: Monitor,
 		keyboard: Keyboard
 	) {
-		this.importSettingsFromURL();
-
 		monitor.bindToViewModel(
 			this.onMonitorPowerUpdated,
 			this.onMonitorLinesUpdated,
@@ -71,45 +59,6 @@ export class ViewModel {
 		this.shell.onKeySignal(KeyInputSignal.fromKeyboardEvent(e));
 	};
 
-	private importSettingsFromURL = () => {
-		const url = window.location.href;
-		const start = url.indexOf('?') + 1;
-
-		if (start === 0) return;
-
-		const end = (url.indexOf('#') + 1 || url.length + 1) - 1;
-		const paramStr = url.slice(start, end);
-		if (paramStr.length < 1) return;
-
-		const pairs = paramStr.replace(/\+/g, ' ').split('&');
-		const truthy = ['1','true', 'yes','yep', 'on'];
-		const falsey = ['0','false','no', 'nope','off'];
-
-		pairs.forEach(pair => {
-			let p = pair.split('=', 2);
-			let name = decodeURIComponent(p[0]).trim(); // setting name
-			let val = decodeURIComponent(p[1]); // setting value
-
-			if (name === 'on') {
-				let boolVal: boolean;
-				if (truthy.indexOf(val) > -1) {
-					boolVal = true;
-				} else if (falsey.indexOf(val) > -1) {
-					boolVal = false;
-				} else {
-					console.warn(`Value '${val}' is invalid for setting '${name}'. Skipping...`);
-					return;
-				}
-
-				this.config.on = boolVal;
-			}
-
-			if (name === 'cmd') {
-				this.config.commands.push(val);
-			}
-		});
-	};
-
 	onMonitorPowerUpdated = (on: boolean) => {
 		if (on !== this.displayElem.classList.contains('on')) {
 			this.lightElem.classList.toggle('on');
@@ -133,9 +82,5 @@ export class ViewModel {
 		for (let key of litKeys) {
 			this.getKeyElem(key)?.classList.add('on');
 		}
-	}
-
-	getConfig() {
-		return this.config;
 	}
 }

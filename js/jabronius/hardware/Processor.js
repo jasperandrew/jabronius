@@ -16,19 +16,21 @@ export class Processor {
             return f(this.sys, this.shell, this.filesys, args, IN, OUT, ERR);
         }
         catch (e) {
-            const err = e;
-            let msg = err?.name;
-            if (err?.lineNumber) {
-                msg += ` (${err?.lineNumber}`;
-                if (err?.columnNumber)
-                    msg += `,${err?.columnNumber}`;
-                msg += ')';
-            }
-            msg += `: ${err?.message}`;
-            ERR(msg);
+            ERR(buildErrorMessage(e));
             console.error(e);
             return false;
         }
     }
     ;
+}
+function buildErrorMessage(err) {
+    let msg = err?.name;
+    if (err?.lineNumber) {
+        msg += ` (${err?.lineNumber}`;
+        if (err?.columnNumber)
+            msg += `,${err?.columnNumber}`;
+        msg += ')';
+    }
+    msg += `: ${err?.message}`;
+    return msg;
 }

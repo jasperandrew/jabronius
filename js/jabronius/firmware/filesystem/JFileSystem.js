@@ -1,41 +1,14 @@
 import { JFSDirectory } from "./JFSDirectory.js";
-import { JFSRoot } from "./JFSRoot.js";
 import { JFSFile, JFSType } from "./JFSFile.js";
 import { JFSLink } from "./JFSLink.js";
 const DEFAULT_PATH_RESOLVE = true;
 const DEFAULT_PATH_MKDIRS = false;
 const DEFAULT_PATH_TOUCH = false;
-let jfsUpdateCallback = null;
-export function jfsUpdated() {
-    jfsUpdateCallback?.call(null);
-}
 export class JFileSystem {
-    root = new JFSRoot();
-    constructor() {
-        jfsUpdateCallback = this.jfsUpdated;
-        let JFS_JSON = localStorage.getItem('jfs_json');
-        if (JFS_JSON) {
-            try {
-                this.importDir(this.root, JSON.parse(JFS_JSON));
-                // recover if scr directory is deleted, until a reset is added
-                if (!this.resolveAbsolutePath(this.getPathList('/scr'), {})) {
-                    console.log('no scripts, resetting');
-                    JFS_JSON = null;
-                }
-            }
-            catch (err) {
-                console.log('local JFS import failed', err);
-                JFS_JSON = null;
-            }
-        }
-        if (!JFS_JSON) {
-            this.importDir(this.root, JFS_ROOT);
-            this.jfsUpdated();
-        }
+    root;
+    constructor(root) {
+        this.root = root;
     }
-    jfsUpdated = () => {
-        localStorage.setItem('jfs_json', JSON.stringify(this.root.getContent(), (k, v) => k === 'parent' ? undefined : v));
-    };
     getPathList(path) {
         if (!path)
             return [];
@@ -105,44 +78,6 @@ export class JFileSystem {
         if (pathList.length)
             newPath += '/' + pathList.join('/');
         return this.resolveAbsolutePath(this.getPathList(newPath), config);
-    }
-    importDir(dir, dirObj) {
-        dirObj.forEach(f => {
-            if (!f) {
-                console.error('import file invalid');
-                return;
-            }
-            const name = f['name'], type = f['type'], content = f['content'];
-            let file;
-            switch (type) {
-                case JFSType.Data: {
-                    file = new JFSFile(name, content, dir);
-                    break;
-                }
-                case JFSType.Directory: {
-                    file = new JFSDirectory(name, dir);
-                    this.importDir(file, content);
-                    break;
-                }
-                case JFSType.Link: {
-                    file = new JFSLink(name, content, dir);
-                    break;
-                }
-                default: return;
-            }
-            this.addSubFile(dir, file);
-        });
-    }
-    addSubFile(dir, file) {
-        if (!dir) {
-            console.error('invalid dir');
-            return;
-        }
-        if (typeof (dir.getContent()) !== 'object') {
-            console.error('dir contents invalid. making it a blank array.');
-            dir.setContent([]);
-        }
-        dir.addFile(file);
     }
     getRoot() { return this.root; }
     getFile(filePath, config) {
