@@ -8,8 +8,7 @@ import { ViewModel } from "../model/ViewModel.js";
 import { Drive } from "./hardware/Drive.js";
 
 export class System {
-	private readonly browserModel: BrowserModel = new BrowserModel();
-
+	
 	private readonly drive: Drive = new Drive();
 	private readonly monitor: Monitor = new Monitor();
 	private readonly keyboard: Keyboard = new Keyboard();
@@ -17,6 +16,7 @@ export class System {
 	private readonly shell: Shell = new Shell(this, this.filesys, this.drive, '/home/jasper');
 	private readonly cpu: Processor = new Processor(this, this.shell, this.filesys);
 	
+	private readonly browserModel: BrowserModel = new BrowserModel(this.drive);
 	private readonly viewModel: ViewModel = new ViewModel(this.shell, this.monitor, this.keyboard);
 
 	constructor() {

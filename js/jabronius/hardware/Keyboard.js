@@ -28,7 +28,7 @@ export class Keyboard {
         this.litKeys.delete(e.code);
         this.notifyLitKeysUpdated();
     };
-    bindToViewModel(litKeysUpdater, bindKeyDown, bindKeyUp, bindBlur) {
+    bindModel(litKeysUpdater, bindKeyDown, bindKeyUp, bindBlur) {
         this.litKeysUpdater = litKeysUpdater;
         bindKeyDown(this.keyDown);
         bindKeyUp(this.keyUp);

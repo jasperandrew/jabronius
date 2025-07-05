@@ -8,22 +8,22 @@ const DEFAULT_PATH_MKDIRS = false;
 const DEFAULT_PATH_TOUCH = false;
 export class JFileSystem {
     drive;
-    root;
+    root = new JFSRoot();
     constructor(drive) {
         this.drive = drive;
-        this.root = this.readFromDisk();
-        console.log(this.root);
+        drive.bindOnReady(() => this.readFromDisk());
+        // this.root = this.readFromDisk();
+        // console.log(this.root);
     }
     writeToDisk = () => {
         this.drive.writeFileStructure(this.root);
     };
     readFromDisk() {
         try {
-            return this.parseJFSDir(JSON.parse(this.drive.readFileStructure()));
+            this.root = this.parseJFSDir(JSON.parse(this.drive.readFileStructure()));
         }
         catch (err) {
-            console.log('JFS parse failed', err);
-            return new JFSRoot();
+            console.error('JFS parse failed', err);
         }
     }
     parseJFSDir(dirFiles, dir) {
@@ -79,6 +79,7 @@ export class JFileSystem {
             if (touch && parent && name) {
                 file = this.drive.createFile(name, type, parent);
                 parent.addFile(file);
+                this.writeToDisk();
             }
             return file;
         }
@@ -97,6 +98,7 @@ export class JFileSystem {
         if (mkdirs && parent && name) {
             let newDir = this.drive.createFile(name, JFSType.Directory, parent);
             parent.addFile(newDir);
+            this.writeToDisk();
             return this.resolvePathFromFolder(newDir, pathList, config);
         }
         return null;
@@ -140,14 +142,17 @@ export class JFileSystem {
         return parentName + (parentName === '/' ? '' : '/') + file.name;
     }
     createFile(filePath, fileType = JFSType.Data, mkdirs = true) {
-        return this.resolveAbsolutePath(this.getPathList(filePath), {
+        const file = this.resolveAbsolutePath(this.getPathList(filePath), {
             mkdirs: mkdirs,
             touch: true,
             type: fileType,
         });
+        this.writeToDisk();
+        return file;
     }
     removeFile(file) {
         file?.parent?.removeFile(file.name);
+        this.writeToDisk();
     }
     readFile(file) {
         if (!file?.address)

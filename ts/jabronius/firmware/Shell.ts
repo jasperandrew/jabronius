@@ -71,6 +71,10 @@ export class Shell {
 
 			this.dirPath = this.filesys.getFilePath(dir);
 			return true;
+		},
+		resetdrive: () => {
+			localStorage.clear();
+			window.location.reload();
 		}
 	}
 
@@ -123,7 +127,6 @@ export class Shell {
 		}
 
 		let script = this.filesys.readFile(file);
-		console.log(file,script);
 		if (!script) return;
 		this.sys.execScript(script, args);
 	}

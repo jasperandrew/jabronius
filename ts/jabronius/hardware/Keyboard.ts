@@ -33,7 +33,7 @@ export class Keyboard {
 		this.notifyLitKeysUpdated();
 	};
 
-	bindToViewModel(litKeysUpdater: Function | null, bindKeyDown: Function, bindKeyUp: Function, bindBlur: Function) {
+	bindModel(litKeysUpdater: Function | null, bindKeyDown: Function, bindKeyUp: Function, bindBlur: Function) {
 		this.litKeysUpdater = litKeysUpdater;
 		bindKeyDown(this.keyDown);
 		bindKeyUp(this.keyUp);

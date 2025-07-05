@@ -7,13 +7,13 @@ import { Processor } from "./hardware/Processor.js";
 import { ViewModel } from "../model/ViewModel.js";
 import { Drive } from "./hardware/Drive.js";
 export class System {
-    browserModel = new BrowserModel();
     drive = new Drive();
     monitor = new Monitor();
     keyboard = new Keyboard();
     filesys = new JFileSystem(this.drive);
     shell = new Shell(this, this.filesys, this.drive, '/home/jasper');
     cpu = new Processor(this, this.shell, this.filesys);
+    browserModel = new BrowserModel(this.drive);
     viewModel = new ViewModel(this.shell, this.monitor, this.keyboard);
     constructor() {
         let config = this.browserModel.getStartupConfig();

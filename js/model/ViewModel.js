@@ -7,8 +7,8 @@ export class ViewModel {
     keyElems = {};
     constructor(shell, monitor, keyboard) {
         this.shell = shell;
-        monitor.bindToViewModel(this.onMonitorPowerUpdated, this.onMonitorLinesUpdated, (f) => (document.querySelector('.button.power')).onclick = f);
-        keyboard.bindToViewModel(this.onKeyboardLitKeysUpdated, (f) => this.keydown = f, (f) => document.onkeyup = f, (f) => document.onblur = f);
+        monitor.bindModel(this.onMonitorPowerUpdated, this.onMonitorLinesUpdated, (f) => (document.querySelector('.button.power')).onclick = f);
+        keyboard.bindModel(this.onKeyboardLitKeysUpdated, (f) => this.keydown = f, (f) => document.onkeyup = f, (f) => document.onblur = f);
         document.onkeydown = this.onKeyDown;
     }
     getKeyElem(code) {

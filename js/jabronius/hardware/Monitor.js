@@ -11,7 +11,7 @@ export class Monitor {
     notifyLinesUpdated = () => {
         this.linesUpdater?.call(null, this.lines);
     };
-    bindToViewModel(powerUpdater, linesUpdater, bindPowerClick) {
+    bindModel(powerUpdater, linesUpdater, bindPowerClick) {
         this.powerUpdater = powerUpdater;
         this.linesUpdater = linesUpdater;
         bindPowerClick(this.togglePower);

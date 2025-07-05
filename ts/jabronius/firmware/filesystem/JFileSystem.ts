@@ -26,25 +26,25 @@ interface JFileStruct {
 }
 
 export class JFileSystem {
-	private readonly root: JFSRoot;
+	private root: JFSRoot = new JFSRoot();
 
 	constructor(
 		private readonly drive: Drive
 	) {
-		this.root = this.readFromDisk();
-		console.log(this.root);
+		drive.bindOnReady(() => this.readFromDisk());
+		// this.root = this.readFromDisk();
+		// console.log(this.root);
 	}
 
 	private writeToDisk = () => {
 		this.drive.writeFileStructure(this.root);
 	}
 
-	private readFromDisk(): JFSRoot {
+	private readFromDisk() {
 		try {
-			return this.parseJFSDir(JSON.parse(this.drive.readFileStructure()));
+			this.root = this.parseJFSDir(JSON.parse(this.drive.readFileStructure()));
 		} catch (err) {
-			console.log('JFS parse failed', err);
-			return new JFSRoot();
+			console.error('JFS parse failed', err);
 		}
 	}
 
@@ -112,6 +112,7 @@ export class JFileSystem {
 			if (touch && parent && name) {
 				file = this.drive.createFile(name, type, parent);
 				parent.addFile(file);
+				this.writeToDisk();
 			}
 			return file;
 		}
@@ -132,6 +133,7 @@ export class JFileSystem {
 		if (mkdirs && parent && name) {
 			let newDir = this.drive.createFile(name, JFSType.Directory, parent) as JFSDirectory;
 			parent.addFile(newDir);
+			this.writeToDisk();
 			return this.resolvePathFromFolder(newDir, pathList, config);
 		}
 
@@ -176,15 +178,18 @@ export class JFileSystem {
 	}
 
 	createFile(filePath: string, fileType = JFSType.Data, mkdirs = true) {
-		return this.resolveAbsolutePath(this.getPathList(filePath), {
+		const file = this.resolveAbsolutePath(this.getPathList(filePath), {
 			mkdirs: mkdirs,
 			touch: true,
 			type: fileType,
 		});
+		this.writeToDisk();
+		return file;
 	}
 
 	removeFile(file: JFSFile) {
 		file?.parent?.removeFile(file.name);
+		this.writeToDisk();
 	}
 
 	readFile(file: JFSFile) {

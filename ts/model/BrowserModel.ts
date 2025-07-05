@@ -1,7 +1,4 @@
-import { JFSDirectory } from "../jabronius/firmware/filesystem/JFSDirectory.js";
-import { JFSFile, JFSType } from "../jabronius/firmware/filesystem/JFSFile.js";
-import { JFSLink } from "../jabronius/firmware/filesystem/JFSLink.js";
-import { JFSRoot } from "../jabronius/firmware/filesystem/JFSRoot.js";
+import { Drive } from "../jabronius/hardware/Drive.js";
 
 export interface StartupConfig {
 	on: boolean;
@@ -11,12 +8,16 @@ export interface StartupConfig {
 const isTruthy = (s: string) => ['1','true', 'yes','yep', 'on' ].includes(s);
 const isFalsey = (s: string) => ['0','false','no', 'nope','off'].includes(s);
 
-let jfsUpdateCallback: Function | null = null;
-export function jfsUpdated() {
-	jfsUpdateCallback?.call(null);
-}
+const DRIVE_DATA_KEY = 'JABRONIUS_DRIVE_DATA';
 
-const JFS_JSON_KEY = 'JFS_JSON';
+function escape(s: string) {
+	return s
+			.replaceAll('\\','\\\\')
+			.replaceAll('\r','')
+			.replaceAll('\n','\\n')
+			.replaceAll('`','\\`')
+			.replaceAll('$','\\$')
+}
 
 export class BrowserModel {
 	private config: StartupConfig = {
@@ -24,13 +25,30 @@ export class BrowserModel {
 		commands: ['welcome']
 	};
 
-	constructor() {
+	private onDataLoaded: Function | null = null;
+
+	constructor(drive: Drive) {
 		const urlConfig = this.parseInitConfigURL();
 		if (urlConfig && JSON.stringify(this.config) !== JSON.stringify(urlConfig)) {
 			this.config = urlConfig;
 		}
 
-		// jfsUpdateCallback = this.storeJFS;
+		drive.bindModel(
+			this.onDriveDataUpdated,
+			(f: Function) => this.onDataLoaded = f
+		);
+
+		this.loadDriveData();
+	}
+
+	private onDriveDataUpdated = (data: string) => {
+		// console.log(data.split('\n').map((s:string) => escape(decodeURIComponent(s))).join('\n'));
+		localStorage.setItem(DRIVE_DATA_KEY, data);
+	}
+
+	private loadDriveData() {
+		const data = localStorage.getItem(DRIVE_DATA_KEY) ?? DRIVE_DATA;
+		this.onDataLoaded?.call(null, data);
 	}
 
 	private parseInitConfigURL = () => {
@@ -73,87 +91,11 @@ export class BrowserModel {
 		return urlConfig;
 	};
 
-	private jfsRoot: JFSRoot | null = null;
-
-	// private loadJFS(reset?: boolean): JFSRoot {
-	// 	try {
-	// 		const jfs = reset ? JFS_ROOT : JSON.parse(localStorage.getItem(JFS_JSON_KEY)!!);
-	// 		this.jfsRoot = this.parseJFSDir(jfs ?? JFS_ROOT);
-
-	// 		if (reset) this.storeJFS();
-
-	// 		// recover if scr directory is deleted, until a reset is added
-	// 		if (this.jfsRoot.getContent().filter((f: JFSFile) => f.getName() === 'scr')[0]) return this.jfsRoot;
-	// 		console.log('no scr dir, resetting JFS');
-	// 	} catch (err) {
-	// 		console.log('JFS parse failed', err);
-	// 	}
-
-	// 	this.jfsRoot = this.parseJFSDir(JFS_ROOT);
-	// 	this.storeJFS();
-	// 	return this.jfsRoot;
-	// }
-
-	// private storeJFS = () => {
-	// 	if (!this.jfsRoot?.getContent()) {
-	// 		localStorage.removeItem(JFS_JSON_KEY);
-	// 		return;
-	// 	}
-	// 	localStorage.setItem(
-	// 		JFS_JSON_KEY,
-	// 		JSON.stringify(
-	// 			this.jfsRoot.getContent(),
-	// 			(k, v) => k === 'parent' ? undefined : v)
-	// 	);
-	// }
-
-	// private parseJFSDir(dirObj: any[], dir?: JFSDirectory) { // TODO: replace this whole system, eventually
-	// 	if (!dir) dir = new JFSRoot();
-
-	// 	dirObj.forEach(f => {
-	// 		if (!f) {
-	// 			console.error('import file invalid');
-	// 			return;
-	// 		}
-	// 		const name = f['name'],
-	// 			type = f['type'],
-	// 			content = f['content'];
-	// 		let file;
-	// 		switch (type) {
-	// 			case JFSType.Data: {
-	// 				file = new JFSFile(name, content, dir);
-	// 				break;
-	// 			}
-	// 			case JFSType.Directory: {
-	// 				file = this.parseJFSDir(content, new JFSDirectory(name, dir));
-	// 				break;
-	// 			}
-	// 			case JFSType.Link: {
-	// 				file = new JFSLink(name, content, dir);
-	// 				break;
-	// 			}
-	// 			default: return;
-	// 		}
-
-	// 		if (!dir) {
-	// 			console.error('dir undefined');
-	// 			return;
-	// 		}
-	// 		if (typename(dir.getContent()) !== 'Array') {
-	// 			console.error('dir contents not an array. setting to blank array.');
-	// 			dir.setContent([]);
-	// 		}
-	// 		dir.addFile(file);
-	// 	});
-
-	// 	return dir;
-	// }
-
 	getStartupConfig() {
 		return this.config;
 	}
 
-	// getJFSRoot() {
-	// 	return this.loadJFS();
-	// }
+	getDriveData() {
+		return this.loadDriveData();
+	}
 }

@@ -17,12 +17,12 @@ export class ViewModel {
 		monitor: Monitor,
 		keyboard: Keyboard
 	) {
-		monitor.bindToViewModel(
+		monitor.bindModel(
 			this.onMonitorPowerUpdated,
 			this.onMonitorLinesUpdated,
 			(f: MouseEventHandler) => (document.querySelector<HTMLDivElement>('.button.power')!!).onclick = f);
 
-		keyboard.bindToViewModel(
+		keyboard.bindModel(
 			this.onKeyboardLitKeysUpdated,
 			(f: KeyboardEventHandler) => this.keydown = f,
 			(f: KeyboardEventHandler) => document.onkeyup = f,
@@ -53,20 +53,20 @@ export class ViewModel {
 		}
 	};
 
-	keydown: Function | null = null;
+	private keydown: Function | null = null;
 	private onKeyDown = (e: KeyboardEvent) => {
 		this.keydown?.call(null, e);
 		this.shell.onKeySignal(KeyInputSignal.fromKeyboardEvent(e));
 	};
 
-	onMonitorPowerUpdated = (on: boolean) => {
+	private onMonitorPowerUpdated = (on: boolean) => {
 		if (on !== this.displayElem.classList.contains('on')) {
 			this.lightElem.classList.toggle('on');
 			this.displayElem.classList.toggle('on');
 		}
 	}
 
-	onMonitorLinesUpdated = (lines: string[]) => {
+	private onMonitorLinesUpdated = (lines: string[]) => {
 		if (this.lineElems.length !== lines.length)
 			this.initDisplayRows(lines.length);
 
@@ -77,7 +77,7 @@ export class ViewModel {
 		}
 	}
 
-	onKeyboardLitKeysUpdated = (litKeys: string[]) => {
+	private onKeyboardLitKeysUpdated = (litKeys: string[]) => {
 		document.querySelectorAll('.key').forEach(elem => elem.classList.remove('on'));
 		for (let key of litKeys) {
 			this.getKeyElem(key)?.classList.add('on');
