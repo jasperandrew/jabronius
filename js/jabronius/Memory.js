@@ -1,7 +1,4 @@
-import { JFSData } from "./filesystem/JFSData.js";
-import { JFSDirectory } from "./filesystem/JFSDirectory.js";
-import { JFSType } from "./filesystem/JFSFile.js";
-import { JFSLink } from "./filesystem/JFSLink.js";
+import { JData, JDirectory, JLink, JFileType } from "./FileStructure.js";
 export class Memory {
     data = [];
     driveReadyListeners = new Set();
@@ -25,7 +22,7 @@ export class Memory {
     isDirAddress = (addr) => this.isFileAddress(addr) && this.data[addr][0] === '1';
     formatDirData = (files) => files.map(f => `${f.name}/${f.address}`).join('|');
     formatFileData(file, content) {
-        if (file instanceof JFSDirectory)
+        if (file instanceof JDirectory)
             content = this.formatDirData(file.files);
         return `${file.type}${file.name}|${content ?? ''}`;
     }
@@ -41,14 +38,14 @@ export class Memory {
         const address = this.data.length;
         let file;
         switch (type) {
-            case JFSType.Data:
-                file = new JFSData(name, address, parent);
+            case JFileType.Data:
+                file = new JData(name, address, parent);
                 break;
-            case JFSType.Directory:
-                file = new JFSDirectory(name, address, parent);
+            case JFileType.Directory:
+                file = new JDirectory(name, address, parent);
                 break;
-            case JFSType.Link:
-                file = new JFSLink(name, address, parent);
+            case JFileType.Link:
+                file = new JLink(name, address, parent);
                 break;
         }
         this.data.push(this.formatFileData(file, content));
@@ -81,7 +78,7 @@ export class Memory {
             console.error('not a valid directory address: ' + addr);
             return false;
         }
-        this.data[addr] = JFSType.Directory.toString()
+        this.data[addr] = JFileType.Directory.toString()
             + JSON.stringify(dir.files.map((f) => `${f.name}|${f.address}`));
         this.fireMemoryUpdated();
         return true;

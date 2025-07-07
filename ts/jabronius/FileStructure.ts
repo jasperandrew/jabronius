@@ -1,9 +1,4 @@
-import { Memory } from "../Memory.js";
-import { JFSData } from "./JFSData.js";
-import { JFSDirectory } from "./JFSDirectory.js";
-import { JFSFile, JFSType } from "./JFSFile.js";
-import { JFSLink } from "./JFSLink.js";
-import { JFSRoot } from "./JFSRoot.js";
+import { Memory } from "./Memory.js";
 
 const DEFAULT_PATH_RESOLVE = true;
 const DEFAULT_PATH_MKDIRS = false;
@@ -13,20 +8,20 @@ interface ResolveConfig {
 	resolve?: boolean;
 	mkdirs?: boolean;
 	touch?: boolean;
-	type?: JFSType;
-	parent?: JFSDirectory | null;
+	type?: JFileType;
+	parent?: JDirectory | null;
 	name?: string;
 }
 
-interface JFileStruct {
+interface FileModel {
 	name: string;
 	type: number;
 	address: number;
-	files?: JFileStruct[];
+	files?: FileModel[];
 }
 
-export class JFileSystem {
-	private root: JFSRoot = new JFSRoot();
+export class FileStructure {
+	private root: JRoot = new JRoot();
 
 	constructor(
 		private readonly memory: Memory
@@ -48,8 +43,8 @@ export class JFileSystem {
 		}
 	}
 
-	private parseJFSDir(dirFiles: JFileStruct[], dir?: JFSDirectory) {
-		if (!dir) dir = new JFSRoot();
+	private parseJFSDir(dirFiles: FileModel[], dir?: JDirectory) {
+		if (!dir) dir = new JRoot();
 
 		dirFiles.forEach(f => {
 			if (!f) {
@@ -58,20 +53,20 @@ export class JFileSystem {
 			}
 			let file;
 			switch (f.type) {
-				case JFSType.Data: {
-					file = new JFSData(f.name, f.address, dir);
+				case JFileType.Data: {
+					file = new JData(f.name, f.address, dir);
 					break;
 				}
-				case JFSType.Directory: {
+				case JFileType.Directory: {
 					if (!f.files) {
 						console.error('dir files undefined');
 						return;
 					}
-					file = this.parseJFSDir(f.files, new JFSDirectory(f.name, f.address, dir));
+					file = this.parseJFSDir(f.files, new JDirectory(f.name, f.address, dir));
 					break;
 				}
-				case JFSType.Link: {
-					file = new JFSLink(f.name, f.address, dir);
+				case JFileType.Link: {
+					file = new JLink(f.name, f.address, dir);
 					break;
 				}
 				default: return;
@@ -93,20 +88,20 @@ export class JFileSystem {
 		return pathList.filter(name => name);
 	}
 
-	private resolveAbsolutePath(pathList: string[], config: any): JFSFile | null {
+	private resolveAbsolutePath(pathList: string[], config: any): JFile | null {
 		return this.resolveRelativePath(this.root, pathList, config);
 	}
 
-	private resolveRelativePath(file: JFSFile | null, pathList: string[], config: ResolveConfig): JFSFile | null {
+	private resolveRelativePath(file: JFile | null, pathList: string[], config: ResolveConfig): JFile | null {
 		let resolve = config.resolve ?? DEFAULT_PATH_RESOLVE,
 			mkdirs = config.mkdirs ?? DEFAULT_PATH_MKDIRS,
 			touch = config.touch ?? DEFAULT_PATH_TOUCH,
-			type = config.type ?? JFSType.Data,
+			type = config.type ?? JFileType.Data,
 			parent = config.parent,
 			name = config.name;
 
 		if (!pathList.length) {
-			if (resolve && file?.type === JFSType.Link)
+			if (resolve && file?.type === JFileType.Link)
 				return this.resolvePathFromLink(file, [], config);
 
 			if (touch && parent && name) {
@@ -118,20 +113,20 @@ export class JFileSystem {
 		}
 
 		switch (file?.type) {
-			case JFSType.Directory: {
-				return this.resolvePathFromFolder(file as JFSDirectory | null, pathList, config);
+			case JFileType.Directory: {
+				return this.resolvePathFromFolder(file as JDirectory | null, pathList, config);
 			}
-			case JFSType.Link: {
+			case JFileType.Link: {
 				return this.resolvePathFromLink(file, pathList, config);
 			}
-			case JFSType.Data: {
+			case JFileType.Data: {
 				// todo: throw error?
 				return null;
 			}
 		}
 
 		if (mkdirs && parent && name) {
-			let newDir = this.memory.createFile(name, JFSType.Directory, parent) as JFSDirectory;
+			let newDir = this.memory.createFile(name, JFileType.Directory, parent) as JDirectory;
 			parent.addFile(newDir);
 			this.writeToDisk();
 			return this.resolvePathFromFolder(newDir, pathList, config);
@@ -140,7 +135,7 @@ export class JFileSystem {
 		return null;
 	}
 
-	private resolvePathFromFolder(dir: JFSDirectory | null, pathList: string[], config: any): JFSFile | null { // TODO: better null dir hancling?
+	private resolvePathFromFolder(dir: JDirectory | null, pathList: string[], config: any): JFile | null { // TODO: better null dir hancling?
 		const next = pathList.shift();
 		if (next === undefined) return dir;
 		if (next === '.') {
@@ -149,13 +144,13 @@ export class JFileSystem {
 		if (next === '..') {
 			return this.resolvePathFromFolder(dir ? dir.parent : null, pathList, config);
 		}
-		let nextFile = dir?.files.filter((f: JFSFile) => f.name === next)[0];
+		let nextFile = dir?.files.filter((f: JFile) => f.name === next)[0];
 		config.parent = dir;
 		config.name = next;
 		return this.resolveRelativePath(nextFile!!, pathList, config);
 	}
 
-	private resolvePathFromLink(link: JFSLink, pathList: string[], config: any): JFSFile | null {
+	private resolvePathFromLink(link: JLink, pathList: string[], config: any): JFile | null {
 		let newPath = this.readFile(link);
 		if (!newPath) return null;
 		if (pathList.length) newPath += '/' + pathList.join('/')
@@ -164,12 +159,12 @@ export class JFileSystem {
 
 	getRoot() { return this.root; }
 
-	getFile(filePath: string, config?: ResolveConfig): JFSFile | null {
+	getFile(filePath: string, config?: ResolveConfig): JFile | null {
 		if (!config) config = {};
 		return this.resolveAbsolutePath(this.getPathList(filePath), config);
 	}
 
-	getFilePath(file: JFSFile): string {
+	getFilePath(file: JFile): string {
 		if (file === this.root) return '/';
 		const parent = file.parent;
 		if (parent === null) return file.name;
@@ -177,7 +172,7 @@ export class JFileSystem {
 		return parentName + (parentName === '/' ? '' : '/') + file.name;
 	}
 
-	createFile(filePath: string, fileType = JFSType.Data, mkdirs = true) {
+	createFile(filePath: string, fileType = JFileType.Data, mkdirs = true) {
 		const file = this.resolveAbsolutePath(this.getPathList(filePath), {
 			mkdirs: mkdirs,
 			touch: true,
@@ -187,15 +182,92 @@ export class JFileSystem {
 		return file;
 	}
 
-	removeFile(file: JFSFile) {
+	removeFile(file: JFile) {
 		file?.parent?.removeFile(file.name);
 		this.writeToDisk();
 	}
 
-	readFile(file: JFSFile) {
+	readFile(file: JFile) {
 		if (!file?.address) return null;
 		const data = this.memory.readFile(file?.address);
 		if (!data) return null;
 		return data?.substring(data.indexOf('|') + 1);
+	}
+}
+
+export enum JFileType {
+	Data, Directory, Link
+}
+
+export class JFile {
+	constructor(
+		public name: string,
+		public type: JFileType = JFileType.Data,
+		public address: number,
+		public parent: JDirectory | null
+	) {}
+	
+	toString() { return this.name; }
+}
+
+export class JDirectory extends JFile {
+	public files: JFile[] = [];
+	constructor(name: string, address: number, parent: JDirectory | null) {
+		super(name, JFileType.Directory, address, parent);
+	}
+
+	toString(depth = 0, i = 0) {
+		if (depth === -1) depth = Infinity;
+		let str = this.name + '/';
+		if (depth === i) return str;
+		for (let f of this.files) {
+			let s = f instanceof JDirectory ? f.toString(depth,i+1) : f.toString();
+			str += `\n${'    '.repeat(i+1) + s}`;
+		}
+		return str;
+	}
+
+	hasFile(name: string) {
+		return this.files
+			.filter((f: JFile) => f.name === name)
+			.length > 0;
+	}
+
+	addFile(file: JFile) {
+		if (!file.name) return; // invalid file
+		if (this.hasFile(file.name)) return; // file exists
+
+		file.parent = this;
+		this.files.push(file);
+	}
+
+	removeFile(name: string) {
+		if (!this.hasFile(name)) return;
+		let f = this.files.filter((f: JFile) => f.name === name)[0];
+		f.parent = null;
+		let i = this.files.indexOf(f);
+		this.files.splice(i, 1);
+	}
+}
+
+export class JData extends JFile {
+   constructor(name: string, address: number, parent: JDirectory | null) {
+      super(name, JFileType.Data, address, parent);
+   }
+
+	toString() { return `${this.name}*`; }
+}
+
+export class JLink extends JFile {
+	constructor(name: string, address: number, parent: JDirectory | null) {
+		super(name, JFileType.Link, address, parent);
+	}
+
+	toString() { return this.name + ' -> '; } // todo
+}
+
+export class JRoot extends JDirectory {
+	constructor() {
+		super('', 1, null);
 	}
 }

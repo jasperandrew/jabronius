@@ -14,7 +14,7 @@ function formatDriveData(file, content) {
 	return `${file.type}${file.name}|${content}`;
 }
 
-function processDir(path, jfsDir) {
+function processDir(path, fsDir) {
 	if (path.charAt(-1) !== '/') path += '/';
 	fs.readdirSync(path).forEach(fileName => {
 		const filePath = path + fileName;
@@ -25,34 +25,27 @@ function processDir(path, jfsDir) {
 				address: DRIVE_DATA.length,
 				files: []
 			};
-			jfsDir.push(dir);
+			fsDir.push(dir);
 			DRIVE_DATA.push('');
 			processDir(filePath, dir.files);
 			DRIVE_DATA[dir.address] = formatDriveData(dir);
 		} else {
 			let nameParts = fileName.split('.');
+			nameParts.pop();
 			let ext = nameParts.pop();
 			let name = nameParts.join('.');
 			let content = fs.readFileSync(filePath).toString();
 
-			let type;
-			switch(ext) {
-				case 'jfs_lnk': {
-					type = 2; break;
-				}
-				case 'jfs_scr':
-				case 'jfs_dat':
-				default: {
-					type = 0;
-				}
-			}
+
+			let type = 0; // ext === 'jdat'
+			if (ext === 'jlnk') type = 2;
 			
 			let file = {
 				type: type,
 				name: name,
 				address: DRIVE_DATA.length
 			};
-			jfsDir.push(file);
+			fsDir.push(file);
 			DRIVE_DATA.push(formatDriveData(file, content));
 		}
 	});

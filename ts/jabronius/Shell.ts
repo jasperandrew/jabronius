@@ -1,5 +1,4 @@
-import { JFileSystem } from "./filesystem/JFileSystem.js";
-import { JFSFile, JFSType } from "./filesystem/JFSFile.js";
+import { FileStructure, JFile, JFileType } from "./FileStructure.js";
 import { KeyInputSignal, ModCtrl } from "./Keyboard.js";
 import { SystemHub } from "./SystemHub.js";
 
@@ -39,7 +38,7 @@ export class Shell {
 
 	constructor(
 		private readonly hub: SystemHub,
-		private readonly filesys: JFileSystem,
+		private readonly filesys: FileStructure,
 		private dirPath = '/'
 	) {}
 
@@ -48,8 +47,8 @@ export class Shell {
 		return this.dirPath + (path ? `/${path}` : '');
 	}
 
-	private _verifyDir(file: JFSFile | null) {
-		if (file?.type !== JFSType.Directory) {
+	private _verifyDir(file: JFile | null) {
+		if (file?.type !== JFileType.Directory) {
 			return null;
 		}
 
@@ -119,7 +118,7 @@ export class Shell {
 			return;
 		}
 		
-		if (file.type === JFSType.Directory) {
+		if (file.type === JFileType.Directory) {
 			this.error(`${name}: is a directory`);
 			return;
 		}

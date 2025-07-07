@@ -1,8 +1,4 @@
-import { JFSData } from "./filesystem/JFSData.js";
-import { JFSDirectory } from "./filesystem/JFSDirectory.js";
-import { JFSFile, JFSType } from "./filesystem/JFSFile.js";
-import { JFSLink } from "./filesystem/JFSLink.js";
-import { JFSRoot } from "./filesystem/JFSRoot.js";
+import { JData, JDirectory, JFile, JLink, JRoot, JFileType } from "./FileStructure.js";
 
 export type DriveReadyListener = () => void;
 export type MemoryUpdatedListener = (memData: string) => void;
@@ -35,13 +31,13 @@ export class Memory {
 	private isFileAddress = (addr: number) => this.isValidAddress(addr) && this.data[addr] && this.data[addr] !== '';
 	private isDirAddress = (addr: number) => this.isFileAddress(addr) && this.data[addr][0] === '1';
 
-	private formatDirData = (files: JFSFile[]) => files.map(f => `${f.name}/${f.address}`).join('|');
-	private formatFileData(file: JFSFile, content?: string) {
-		if (file instanceof JFSDirectory) content = this.formatDirData(file.files);
+	private formatDirData = (files: JFile[]) => files.map(f => `${f.name}/${f.address}`).join('|');
+	private formatFileData(file: JFile, content?: string) {
+		if (file instanceof JDirectory) content = this.formatDirData(file.files);
 		return `${file.type}${file.name}|${content ?? ''}`;
 	}
 
-	writeFileStructure(root: JFSRoot) {
+	writeFileStructure(root: JRoot) {
 		this.data[0] = JSON.stringify(
 				root.files,
 				(k, v) => k === 'parent' ? undefined : v);
@@ -54,20 +50,20 @@ export class Memory {
 		return this.data[0];
 	}
 
-	createFile(name: string, type: JFSType, parent: JFSDirectory, content?: string): JFSFile {
+	createFile(name: string, type: JFileType, parent: JDirectory, content?: string): JFile {
 		const address = this.data.length;
-		let file: JFSFile;
+		let file: JFile;
 		switch(type) {
-			case JFSType.Data:      file = new JFSData(name, address, parent); break;
-			case JFSType.Directory: file = new JFSDirectory(name, address, parent); break;
-			case JFSType.Link:      file = new JFSLink(name, address, parent); break;
+			case JFileType.Data:      file = new JData(name, address, parent); break;
+			case JFileType.Directory: file = new JDirectory(name, address, parent); break;
+			case JFileType.Link:      file = new JLink(name, address, parent); break;
 		}
 		this.data.push(this.formatFileData(file, content));
 		this.fireMemoryUpdated();
 		return file;
 	}
 
-	writeFile(file: JFSFile, content?: string, append?: boolean): boolean {
+	writeFile(file: JFile, content?: string, append?: boolean): boolean {
 		const addr = file.address;
 		if (!this.isFileAddress(addr)) {
 			console.error('not a valid file address: ' + addr)
@@ -89,14 +85,14 @@ export class Memory {
 		return true;
 	}
 
-	writeDirectory(dir: JFSDirectory): boolean {
+	writeDirectory(dir: JDirectory): boolean {
 		const addr = dir.address;
 		if (!this.isDirAddress(addr)) {
 			console.error('not a valid directory address: ' + addr)
 			return false;
 		}
-		this.data[addr] = JFSType.Directory.toString()
-				+ JSON.stringify(dir.files.map((f: JFSFile) => `${f.name}|${f.address}`));
+		this.data[addr] = JFileType.Directory.toString()
+				+ JSON.stringify(dir.files.map((f: JFile) => `${f.name}|${f.address}`));
 		this.fireMemoryUpdated();
 		return true;
 	}

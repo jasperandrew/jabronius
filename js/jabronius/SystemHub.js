@@ -1,6 +1,6 @@
 import { BrowserModel } from "../model/BrowserModel.js";
 import { ViewModel } from "../model/ViewModel.js";
-import { JFileSystem } from "./filesystem/JFileSystem.js";
+import { FileStructure } from "./FileStructure.js";
 import { Keyboard } from "./Keyboard.js";
 import { Memory } from "./Memory.js";
 import { Monitor } from "./Monitor.js";
@@ -14,7 +14,7 @@ export class SystemHub {
     memory = new Memory();
     monitor = new Monitor();
     keyboard = new Keyboard();
-    filesys = new JFileSystem(this.memory);
+    filesys = new FileStructure(this.memory);
     shell = new Shell(this, this.filesys, '/home/jasper');
     cpu = new Processor(this, this.shell, this.filesys);
     // the order the models are initialized is important

@@ -1,4 +1,4 @@
-import { JFileSystem } from "./filesystem/JFileSystem.js";
+import { FileStructure } from "./FileStructure.js";
 import { Shell } from "./Shell.js";
 import { SystemHub } from "./SystemHub.js";
 
@@ -6,7 +6,7 @@ export class Processor {
 	constructor(
 		private readonly hub: SystemHub,
 		private readonly shell: Shell,
-		private readonly filesys: JFileSystem
+		private readonly filesys: FileStructure
 	) {}
 
 	execute(script: string, args: string[], input: string | null, outFn: Function, errFn: Function) {

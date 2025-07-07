@@ -1,6 +1,6 @@
 import { BrowserModel } from "../model/BrowserModel.js";
 import { ViewModel } from "../model/ViewModel.js";
-import { JFileSystem } from "./filesystem/JFileSystem.js";
+import { FileStructure } from "./FileStructure.js";
 import { Keyboard } from "./Keyboard.js";
 import { Memory } from "./Memory.js";
 import { Monitor } from "./Monitor.js";
@@ -21,7 +21,7 @@ export class SystemHub {
 	private readonly memory: Memory = new Memory();
 	private readonly monitor: Monitor = new Monitor();
 	private readonly keyboard: Keyboard = new Keyboard();
-	private readonly filesys: JFileSystem = new JFileSystem(this.memory);
+	private readonly filesys: FileStructure = new FileStructure(this.memory);
 	private readonly shell: Shell = new Shell(this, this.filesys, '/home/jasper');
 	private readonly cpu: Processor = new Processor(this, this.shell, this.filesys);
 
