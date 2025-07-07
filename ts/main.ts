@@ -1,3 +1,3 @@
-import { System } from "./jabronius/System.js";
+import { SystemHub } from "./jabronius/SystemHub.js";
 
-(window as any).JaBRONIUS = new System();
+(window as any).JaBRONIUS = new SystemHub();

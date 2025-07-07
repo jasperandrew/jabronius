@@ -1,10 +1,10 @@
-import { JFileSystem } from "../firmware/filesystem/JFileSystem.js";
-import { Shell } from "../firmware/Shell.js";
-import { System } from "../System.js";
+import { JFileSystem } from "./filesystem/JFileSystem.js";
+import { Shell } from "./Shell.js";
+import { SystemHub } from "./SystemHub.js";
 
 export class Processor {
 	constructor(
-		private readonly sys: System,
+		private readonly hub: SystemHub,
 		private readonly shell: Shell,
 		private readonly filesys: JFileSystem
 	) {}
@@ -16,7 +16,7 @@ export class Processor {
 
 		try {
 			const f = new Function('SYS','SHELL','FS','ARGS','IN','OUT','ERR', script);
-			return f(this.sys, this.shell, this.filesys, args, IN, OUT, ERR);
+			return f(this.hub, this.shell, this.filesys, args, IN, OUT, ERR);
 		} catch (e) {
 			ERR(buildErrorMessage(e));
 			console.error(e);

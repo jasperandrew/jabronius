@@ -1,8 +1,8 @@
+import { JFSData } from "./JFSData.js";
 import { JFSDirectory } from "./JFSDirectory.js";
-import { JFSRoot } from "./JFSRoot.js";
 import { JFSType } from "./JFSFile.js";
 import { JFSLink } from "./JFSLink.js";
-import { JFSData } from "./JFSData.js";
+import { JFSRoot } from "./JFSRoot.js";
 const DEFAULT_PATH_RESOLVE = true;
 const DEFAULT_PATH_MKDIRS = false;
 const DEFAULT_PATH_TOUCH = false;

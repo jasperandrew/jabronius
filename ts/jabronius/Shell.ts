@@ -1,8 +1,7 @@
-import { Drive } from "../hardware/Drive.js";
-import { KeyInputSignal, ModCtrl } from "../hardware/Keyboard.js";
-import { System } from "../System.js";
 import { JFileSystem } from "./filesystem/JFileSystem.js";
 import { JFSFile, JFSType } from "./filesystem/JFSFile.js";
+import { KeyInputSignal, ModCtrl } from "./Keyboard.js";
+import { SystemHub } from "./SystemHub.js";
 
 export class Shell {
 	private _printing = false;
@@ -39,9 +38,8 @@ export class Shell {
 	})();
 
 	constructor(
-		private readonly sys: System,
+		private readonly hub: SystemHub,
 		private readonly filesys: JFileSystem,
-		private readonly drive: Drive,
 		private dirPath = '/'
 	) {}
 
@@ -59,7 +57,7 @@ export class Shell {
 	}
 
 	private _fireFrameUpdated(promptOnly: boolean) {
-		this.sys.updateFrame(promptOnly);
+		this.hub.updateFrame(promptOnly);
 	}
 
 	private _builtin: any = { // TODO: improve this structure
@@ -128,7 +126,7 @@ export class Shell {
 
 		let script = this.filesys.readFile(file);
 		if (!script) return;
-		this.sys.execScript(script, args);
+		this.hub.execScript(script, args);
 	}
 
 	error(msg: string) {
@@ -142,20 +140,21 @@ export class Shell {
 		this._printFromQueue();
 	}
 
-	onKeySignal(signal: KeyInputSignal) {
-		if (signal.char) {
-			this._prompt += signal.char;
+	onKeySignal = (sig: KeyInputSignal) => {
+		if (sig.type === 'up') return;
+		if (sig.char) {
+			this._prompt += sig.char;
 			this._history.setLvl(0);
 			this._fireFrameUpdated(true);
 			return;
 		}
 
-		switch (signal.code) {
+		switch (sig.code) {
 			case 'Enter': this._submitPrompt(); return;
 			case 'ArrowUp':
-			case 'ArrowDown': this._history.nav(signal.code); break;
+			case 'ArrowDown': this._history.nav(sig.code); break;
 			case 'Backspace':
-				if (signal.mod(ModCtrl)) {
+				if (sig.mod(ModCtrl)) {
 					let val = this._prompt;
 					const match = val.match(/\S*\s*$/);
 					if (match !== null)

@@ -1,9 +1,5 @@
-import { Drive } from "../jabronius/hardware/Drive.js";
-
-export interface StartupConfig {
-	on: boolean;
-	commands: string[];
-}
+import { Memory } from "../jabronius/Memory.js";
+import { StartupConfig, SystemHub } from "../jabronius/SystemHub.js";
 
 const isTruthy = (s: string) => ['1','true', 'yes','yep', 'on' ].includes(s);
 const isFalsey = (s: string) => ['0','false','no', 'nope','off'].includes(s);
@@ -20,38 +16,22 @@ function escape(s: string) {
 }
 
 export class BrowserModel {
-	private config: StartupConfig = {
-		on: true,
-		commands: ['welcome']
-	};
+	constructor(
+		hub: SystemHub,
+		memory: Memory
+	) {
+		memory.memoryUpdatedListeners.add(this.onMemoryUpdated);
+		memory.initMemory(localStorage.getItem(DRIVE_DATA_KEY) ?? DRIVE_DATA);
 
-	private onDataLoaded: Function | null = null;
-
-	constructor(drive: Drive) {
-		const urlConfig = this.parseInitConfigURL();
-		if (urlConfig && JSON.stringify(this.config) !== JSON.stringify(urlConfig)) {
-			this.config = urlConfig;
-		}
-
-		drive.bindModel(
-			this.onDriveDataUpdated,
-			(f: Function) => this.onDataLoaded = f
-		);
-
-		this.loadDriveData();
+		hub.startupSystem(this.parseStartupConfigURL());
 	}
 
-	private onDriveDataUpdated = (data: string) => {
+	private onMemoryUpdated = (memData: string) => {
 		// console.log(data.split('\n').map((s:string) => escape(decodeURIComponent(s))).join('\n'));
-		localStorage.setItem(DRIVE_DATA_KEY, data);
+		localStorage.setItem(DRIVE_DATA_KEY, memData);
 	}
 
-	private loadDriveData() {
-		const data = localStorage.getItem(DRIVE_DATA_KEY) ?? DRIVE_DATA;
-		this.onDataLoaded?.call(null, data);
-	}
-
-	private parseInitConfigURL = () => {
+	private parseStartupConfigURL = () => {
 		const url = window.location.href;
 		const start = url.indexOf('?') + 1;
 
@@ -63,7 +43,7 @@ export class BrowserModel {
 
 		const pairs = paramStr.replace(/\+/g, ' ').split('&');
 
-		const urlConfig: StartupConfig = { on: true, commands: [] };
+		const config: StartupConfig = { on: true, commands: [] };
 		pairs.forEach(pair => {
 			let p = pair.split('=', 2);
 			let name = decodeURIComponent(p[0]).trim(); // setting name
@@ -80,22 +60,14 @@ export class BrowserModel {
 					return;
 				}
 
-				urlConfig.on = boolVal;
+				config.on = boolVal;
 			}
 
 			if (name === 'cmd') {
-				urlConfig.commands.push(val);
+				config.commands.push(val);
 			}
 		});
 
-		return urlConfig;
+		return config;
 	};
-
-	getStartupConfig() {
-		return this.config;
-	}
-
-	getDriveData() {
-		return this.loadDriveData();
-	}
 }

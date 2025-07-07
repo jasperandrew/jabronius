@@ -10,28 +10,16 @@ function escape(s) {
         .replaceAll('$', '\\$');
 }
 export class BrowserModel {
-    config = {
-        on: true,
-        commands: ['welcome']
-    };
-    onDataLoaded = null;
-    constructor(drive) {
-        const urlConfig = this.parseInitConfigURL();
-        if (urlConfig && JSON.stringify(this.config) !== JSON.stringify(urlConfig)) {
-            this.config = urlConfig;
-        }
-        drive.bindModel(this.onDriveDataUpdated, (f) => this.onDataLoaded = f);
-        this.loadDriveData();
+    constructor(hub, memory) {
+        memory.memoryUpdatedListeners.add(this.onMemoryUpdated);
+        memory.initMemory(localStorage.getItem(DRIVE_DATA_KEY) ?? DRIVE_DATA);
+        hub.startupSystem(this.parseStartupConfigURL());
     }
-    onDriveDataUpdated = (data) => {
+    onMemoryUpdated = (memData) => {
         // console.log(data.split('\n').map((s:string) => escape(decodeURIComponent(s))).join('\n'));
-        localStorage.setItem(DRIVE_DATA_KEY, data);
+        localStorage.setItem(DRIVE_DATA_KEY, memData);
     };
-    loadDriveData() {
-        const data = localStorage.getItem(DRIVE_DATA_KEY) ?? DRIVE_DATA;
-        this.onDataLoaded?.call(null, data);
-    }
-    parseInitConfigURL = () => {
+    parseStartupConfigURL = () => {
         const url = window.location.href;
         const start = url.indexOf('?') + 1;
         if (start === 0)
@@ -41,7 +29,7 @@ export class BrowserModel {
         if (paramStr.length < 1)
             return null;
         const pairs = paramStr.replace(/\+/g, ' ').split('&');
-        const urlConfig = { on: true, commands: [] };
+        const config = { on: true, commands: [] };
         pairs.forEach(pair => {
             let p = pair.split('=', 2);
             let name = decodeURIComponent(p[0]).trim(); // setting name
@@ -58,18 +46,12 @@ export class BrowserModel {
                     console.warn(`Value '${val}' is invalid for setting '${name}'. Skipping...`);
                     return;
                 }
-                urlConfig.on = boolVal;
+                config.on = boolVal;
             }
             if (name === 'cmd') {
-                urlConfig.commands.push(val);
+                config.commands.push(val);
             }
         });
-        return urlConfig;
+        return config;
     };
-    getStartupConfig() {
-        return this.config;
-    }
-    getDriveData() {
-        return this.loadDriveData();
-    }
 }

@@ -1,16 +1,33 @@
-import { KeyInputSignal } from "../jabronius/hardware/Keyboard.js";
+import { KeyInputSignal } from "../jabronius/Keyboard.js";
 export class ViewModel {
-    shell;
+    monitor;
+    keyboard;
     displayElem = document.querySelector('#display');
     lightElem = document.querySelector('#light');
     lineElems = [];
     keyElems = {};
-    constructor(shell, monitor, keyboard) {
-        this.shell = shell;
-        monitor.bindModel(this.onMonitorPowerUpdated, this.onMonitorLinesUpdated, (f) => (document.querySelector('.button.power')).onclick = f);
-        keyboard.bindModel(this.onKeyboardLitKeysUpdated, (f) => this.keydown = f, (f) => document.onkeyup = f, (f) => document.onblur = f);
-        document.onkeydown = this.onKeyDown;
+    constructor(monitor, keyboard) {
+        this.monitor = monitor;
+        this.keyboard = keyboard;
+        monitor.powerUpdateListeners.add(this.onMonitorPowerUpdated);
+        monitor.linesUpdateListeners.add(this.onMonitorLinesUpdated);
+        keyboard.litKeysUpdateListeners.add(this.onLitKeysUpdated);
+        document.querySelector('.button.power')?.addEventListener('click', this.onPowerButtonClick);
+        document.addEventListener('keydown', this.onKeyboardEvent);
+        document.addEventListener('keyup', this.onKeyboardEvent);
+        document.addEventListener('blur', this.onBlur);
     }
+    onPowerButtonClick = (e) => {
+        // TODO: timer for "hard reset"
+        this.monitor.togglePower();
+    };
+    onKeyboardEvent = (e) => {
+        this.keyboard.onKeySignal(KeyInputSignal.fromKeyboardEvent(e));
+    };
+    onBlur = () => {
+        this.onLitKeysUpdated();
+        this.keyboard.litKeys.clear();
+    };
     getKeyElem(code) {
         if (this.keyElems[code] === undefined) {
             let elem = document.querySelector('.key.' + code);
@@ -21,7 +38,6 @@ export class ViewModel {
         }
         return this.keyElems[code];
     }
-    ;
     initDisplayRows(num_lines) {
         this.lineElems.length = 0;
         const readout = document.querySelector('#readout');
@@ -32,16 +48,10 @@ export class ViewModel {
             readout.prepend(span);
         }
     }
-    ;
-    keydown = null;
-    onKeyDown = (e) => {
-        this.keydown?.call(null, e);
-        this.shell.onKeySignal(KeyInputSignal.fromKeyboardEvent(e));
-    };
-    onMonitorPowerUpdated = (on) => {
-        if (on !== this.displayElem.classList.contains('on')) {
-            this.lightElem.classList.toggle('on');
-            this.displayElem.classList.toggle('on');
+    onMonitorPowerUpdated = (isOn) => {
+        if (isOn !== this.displayElem?.classList.contains('on')) {
+            this.lightElem?.classList.toggle('on');
+            this.displayElem?.classList.toggle('on');
         }
     };
     onMonitorLinesUpdated = (lines) => {
@@ -54,8 +64,10 @@ export class ViewModel {
                 this.lineElems[i].innerHTML = lines[i];
         }
     };
-    onKeyboardLitKeysUpdated = (litKeys) => {
+    onLitKeysUpdated = (litKeys) => {
         document.querySelectorAll('.key').forEach(elem => elem.classList.remove('on'));
+        if (!litKeys)
+            return;
         for (let key of litKeys) {
             this.getKeyElem(key)?.classList.add('on');
         }

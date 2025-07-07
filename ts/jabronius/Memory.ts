@@ -1,38 +1,28 @@
-import { JFSData } from "../firmware/filesystem/JFSData.js";
-import { JFSDirectory } from "../firmware/filesystem/JFSDirectory.js";
-import { JFSFile, JFSType } from "../firmware/filesystem/JFSFile.js";
-import { JFSLink } from "../firmware/filesystem/JFSLink.js";
-import { JFSRoot } from "../firmware/filesystem/JFSRoot.js";
+import { JFSData } from "./filesystem/JFSData.js";
+import { JFSDirectory } from "./filesystem/JFSDirectory.js";
+import { JFSFile, JFSType } from "./filesystem/JFSFile.js";
+import { JFSLink } from "./filesystem/JFSLink.js";
+import { JFSRoot } from "./filesystem/JFSRoot.js";
 
-export class Drive {
+export type DriveReadyListener = () => void;
+export type MemoryUpdatedListener = (memData: string) => void;
+
+export class Memory {
 	private data: string[] = [];
 
-	private dataUpdater: Function | null = null;
-	private notifyDataUpdated = () => {
-		this.dataUpdater?.call(null, this.packDrive());
-	}
+	readonly driveReadyListeners: Set<DriveReadyListener> = new Set();
+	private fireDriveReady = () => this.driveReadyListeners.forEach((l: DriveReadyListener) => l());
 
-	private onDriveReady: Function | null = null;
-
-	constructor() {
-		// this.data = 
-		// console.log(this.data);
-	}
-
-	bindModel(dataUpdater: Function, bindLoadData: Function) {
-		this.dataUpdater = dataUpdater;
-		bindLoadData((driveData: string) => {
-			this.data = this.unpackDrive(driveData);
-			this.onDriveReady?.call(null);
-		});
-	}
-
-	bindOnReady(onDriveReady: Function) {
-		this.onDriveReady = onDriveReady;
+	readonly memoryUpdatedListeners: Set<MemoryUpdatedListener> = new Set();
+	private fireMemoryUpdated = () => this.memoryUpdatedListeners.forEach((l: MemoryUpdatedListener) => l(this.packDrive()));
+	
+	initMemory = (memData: string) => {
+		this.unpackDrive(memData);
+		this.fireDriveReady();
 	}
 
 	private unpackDrive(driveData: string) {
-		return driveData.split('\n').map((s: string) => decodeURIComponent(s));
+		this.data = driveData.split('\n').map((s: string) => decodeURIComponent(s));
 	}
 
 	private packDrive() {
@@ -57,7 +47,7 @@ export class Drive {
 				(k, v) => k === 'parent' ? undefined : v);
 		
 		this.data[1] = this.formatDirData(root.files);
-		this.notifyDataUpdated();
+		this.fireMemoryUpdated();
 	}
 
 	readFileStructure() {
@@ -73,7 +63,7 @@ export class Drive {
 			case JFSType.Link:      file = new JFSLink(name, address, parent); break;
 		}
 		this.data.push(this.formatFileData(file, content));
-		this.notifyDataUpdated();
+		this.fireMemoryUpdated();
 		return file;
 	}
 
@@ -91,11 +81,11 @@ export class Drive {
 		content = content ?? '';
 		if (append) {
 			this.data[addr] += content;
-			this.notifyDataUpdated();
+			this.fireMemoryUpdated();
 			return true;
 		}
 		this.data[addr] = this.formatFileData(file, content);
-		this.notifyDataUpdated();
+		this.fireMemoryUpdated();
 		return true;
 	}
 
@@ -107,7 +97,7 @@ export class Drive {
 		}
 		this.data[addr] = JFSType.Directory.toString()
 				+ JSON.stringify(dir.files.map((f: JFSFile) => `${f.name}|${f.address}`));
-		this.notifyDataUpdated();
+		this.fireMemoryUpdated();
 		return true;
 	}
 
@@ -125,7 +115,7 @@ export class Drive {
 			return false;
 		}
 		this.data[addr] = '';
-		this.notifyDataUpdated();
+		this.fireMemoryUpdated();
 		return true;
 	}
 }

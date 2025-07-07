@@ -1,5 +1,5 @@
-import { ModCtrl } from "../hardware/Keyboard.js";
 import { JFSType } from "./filesystem/JFSFile.js";
+import { ModCtrl } from "./Keyboard.js";
 export class Shell {
     hub;
     filesys;

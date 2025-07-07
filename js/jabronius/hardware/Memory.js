@@ -1,23 +1,15 @@
-import { JFSData } from "../firmware/filesystem/JFSData.js";
-import { JFSDirectory } from "../firmware/filesystem/JFSDirectory.js";
-import { JFSType } from "../firmware/filesystem/JFSFile.js";
-import { JFSLink } from "../firmware/filesystem/JFSLink.js";
-export class Drive {
+import { JFSData } from "../filesystem/JFSData.js";
+import { JFSDirectory } from "../filesystem/JFSDirectory.js";
+import { JFSType } from "../filesystem/JFSFile.js";
+import { JFSLink } from "../filesystem/JFSLink.js";
+export class Memory {
     data = [];
     driveReadyListeners = new Set();
     fireDriveReady = () => this.driveReadyListeners.forEach((l) => l());
     memoryUpdatedListeners = new Set();
     fireMemoryUpdated = () => this.memoryUpdatedListeners.forEach((l) => l(this.packDrive()));
-    constructor() {
-        // this.data = 
-        // console.log(this.data);
-    }
-    bindModel(model) {
-        model.dataReadyListeners.add(this.onDriveDataReady);
-        this.storeDataFn = model.storeDriveData;
-    }
-    onDriveDataReady = (driveData) => {
-        this.unpackDrive(driveData);
+    initMemory = (memData) => {
+        this.unpackDrive(memData);
         this.fireDriveReady();
     };
     unpackDrive(driveData) {

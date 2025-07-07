@@ -1,35 +1,40 @@
-import { Shell } from "../jabronius/firmware/Shell.js";
-import { Keyboard, KeyInputSignal } from "../jabronius/hardware/Keyboard.js";
-import { Monitor } from "../jabronius/hardware/Monitor.js";
-
-export type MouseEventHandler    = (ev: MouseEvent)    => any | null;
-export type KeyboardEventHandler = (ev: KeyboardEvent) => any | null;
-export type FocusEventHandler    = (ev: FocusEvent)    => any | null;
+import { Keyboard, KeyInputSignal } from "../jabronius/Keyboard.js";
+import { Monitor } from "../jabronius/Monitor.js";
 
 export class ViewModel {
-	private readonly displayElem = document.querySelector('#display')!!;
-	private readonly lightElem = document.querySelector('#light')!!;
+	private readonly displayElem = document.querySelector('#display');
+	private readonly lightElem = document.querySelector('#light');
 	private readonly lineElems: Array<HTMLSpanElement> = [];
 	private readonly keyElems: { [code: string]: Element | null } = {};
 
 	constructor(
-		private readonly shell: Shell,
-		monitor: Monitor,
-		keyboard: Keyboard
+		private readonly monitor: Monitor,
+		private readonly keyboard: Keyboard
 	) {
-		monitor.bindModel(
-			this.onMonitorPowerUpdated,
-			this.onMonitorLinesUpdated,
-			(f: MouseEventHandler) => (document.querySelector<HTMLDivElement>('.button.power')!!).onclick = f);
+		monitor.powerUpdateListeners.add(this.onMonitorPowerUpdated);
+		monitor.linesUpdateListeners.add(this.onMonitorLinesUpdated);
 
-		keyboard.bindModel(
-			this.onKeyboardLitKeysUpdated,
-			(f: KeyboardEventHandler) => this.keydown = f,
-			(f: KeyboardEventHandler) => document.onkeyup = f,
-			(f: FocusEventHandler) => document.onblur = f
-		);
+		keyboard.litKeysUpdateListeners.add(this.onLitKeysUpdated);
 
-		document.onkeydown = this.onKeyDown;
+		document.querySelector<HTMLDivElement>('.button.power')?.addEventListener('click', this.onPowerButtonClick);
+
+		document.addEventListener('keydown', this.onKeyboardEvent);
+		document.addEventListener('keyup', this.onKeyboardEvent);
+		document.addEventListener('blur', this.onBlur);
+	}
+
+	private onPowerButtonClick = (e: MouseEvent) => {
+		// TODO: timer for "hard reset"
+		this.monitor.togglePower();
+	}
+
+	private onKeyboardEvent = (e: KeyboardEvent) => {
+		this.keyboard.onKeySignal(KeyInputSignal.fromKeyboardEvent(e));
+	}
+
+	private onBlur = () => {
+		this.onLitKeysUpdated();
+		this.keyboard.litKeys.clear();
 	}
 
 	private getKeyElem(code: string) {
@@ -40,7 +45,7 @@ export class ViewModel {
 				return elem;
 		}
 		return this.keyElems[code];
-	};
+	}
 
 	private initDisplayRows(num_lines: number) {
 		this.lineElems.length = 0;
@@ -51,18 +56,12 @@ export class ViewModel {
 			this.lineElems.push(span);
 			readout.prepend(span);
 		}
-	};
+	}
 
-	private keydown: Function | null = null;
-	private onKeyDown = (e: KeyboardEvent) => {
-		this.keydown?.call(null, e);
-		this.shell.onKeySignal(KeyInputSignal.fromKeyboardEvent(e));
-	};
-
-	private onMonitorPowerUpdated = (on: boolean) => {
-		if (on !== this.displayElem.classList.contains('on')) {
-			this.lightElem.classList.toggle('on');
-			this.displayElem.classList.toggle('on');
+	private onMonitorPowerUpdated = (isOn: boolean) => {
+		if (isOn !== this.displayElem?.classList.contains('on')) {
+			this.lightElem?.classList.toggle('on');
+			this.displayElem?.classList.toggle('on');
 		}
 	}
 
@@ -77,8 +76,9 @@ export class ViewModel {
 		}
 	}
 
-	private onKeyboardLitKeysUpdated = (litKeys: string[]) => {
+	private onLitKeysUpdated = (litKeys?: Set<string>) => {
 		document.querySelectorAll('.key').forEach(elem => elem.classList.remove('on'));
+		if (!litKeys) return;
 		for (let key of litKeys) {
 			this.getKeyElem(key)?.classList.add('on');
 		}

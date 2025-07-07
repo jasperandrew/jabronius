@@ -1,9 +1,9 @@
+import { Memory } from "../Memory.js";
+import { JFSData } from "./JFSData.js";
 import { JFSDirectory } from "./JFSDirectory.js";
-import { JFSRoot } from "./JFSRoot.js";
 import { JFSFile, JFSType } from "./JFSFile.js";
 import { JFSLink } from "./JFSLink.js";
-import { Drive } from "../../hardware/Drive.js";
-import { JFSData } from "./JFSData.js";
+import { JFSRoot } from "./JFSRoot.js";
 
 const DEFAULT_PATH_RESOLVE = true;
 const DEFAULT_PATH_MKDIRS = false;
@@ -29,26 +29,26 @@ export class JFileSystem {
 	private root: JFSRoot = new JFSRoot();
 
 	constructor(
-		private readonly drive: Drive
+		private readonly memory: Memory
 	) {
-		drive.bindOnReady(() => this.readFromDisk());
+		memory.driveReadyListeners.add(() => this.readFromDisk());
 		// this.root = this.readFromDisk();
 		// console.log(this.root);
 	}
 
 	private writeToDisk = () => {
-		this.drive.writeFileStructure(this.root);
+		this.memory.writeFileStructure(this.root);
 	}
 
 	private readFromDisk() {
 		try {
-			this.root = this.parseJFSDir(JSON.parse(this.drive.readFileStructure()));
+			this.root = this.parseJFSDir(JSON.parse(this.memory.readFileStructure()));
 		} catch (err) {
 			console.error('JFS parse failed', err);
 		}
 	}
 
-	private parseJFSDir(dirFiles: JFileStruct[], dir?: JFSDirectory) { // TODO: replace this whole system, eventually
+	private parseJFSDir(dirFiles: JFileStruct[], dir?: JFSDirectory) {
 		if (!dir) dir = new JFSRoot();
 
 		dirFiles.forEach(f => {
@@ -110,7 +110,7 @@ export class JFileSystem {
 				return this.resolvePathFromLink(file, [], config);
 
 			if (touch && parent && name) {
-				file = this.drive.createFile(name, type, parent);
+				file = this.memory.createFile(name, type, parent);
 				parent.addFile(file);
 				this.writeToDisk();
 			}
@@ -131,7 +131,7 @@ export class JFileSystem {
 		}
 
 		if (mkdirs && parent && name) {
-			let newDir = this.drive.createFile(name, JFSType.Directory, parent) as JFSDirectory;
+			let newDir = this.memory.createFile(name, JFSType.Directory, parent) as JFSDirectory;
 			parent.addFile(newDir);
 			this.writeToDisk();
 			return this.resolvePathFromFolder(newDir, pathList, config);
@@ -194,7 +194,7 @@ export class JFileSystem {
 
 	readFile(file: JFSFile) {
 		if (!file?.address) return null;
-		const data = this.drive.readFile(file?.address);
+		const data = this.memory.readFile(file?.address);
 		if (!data) return null;
 		return data?.substring(data.indexOf('|') + 1);
 	}
