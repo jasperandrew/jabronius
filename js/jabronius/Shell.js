@@ -12,12 +12,12 @@ export class Shell {
     isPrinting = false;
     printQueue = [];
     printDelay = 7;
-    buffer = [];
+    buffer = '';
     prompt = new Prompt();
     bufferUpdatedListeners = new Set();
-    fireBufferUpdated = () => this.bufferUpdatedListeners.forEach((l) => l(this.buffer));
+    fireBufferUpdated = () => this.bufferUpdatedListeners.forEach((l) => l(this.renderBuffer()));
     scriptSubmittedListeners = new Set();
-    fireScriptSubmitted = (script, args) => this.scriptSubmittedListeners.forEach((l) => l(script, args, null, this.print, this.error));
+    fireScriptSubmitted = (script, args) => this.scriptSubmittedListeners.forEach((l) => l(script, args, null, this.println, this.error));
     builtins = {
         cd: (args) => {
             let path = args[1] ?? '.', dir = this.resolveFile(path);
@@ -32,6 +32,9 @@ export class Shell {
             return ExitCode.SUCCESS;
         }
     };
+    renderBuffer() {
+        return (this.buffer + this.prompt.get()).split('\n');
+    }
     constructor(fs, dirPath = '/') {
         this.fs = fs;
         this.dirPath = dirPath;
@@ -42,35 +45,44 @@ export class Shell {
         let next = this.printQueue.pop();
         if (next === undefined) {
             this.isPrinting = false;
-            // this.buffer.unshift(this.prompt.getLine());
-            // this.fireBufferUpdated();
             return;
         }
-        this.buffer.unshift(next);
+        this.buffer += next.input + (next.newline ? '\n' : '');
         this.fireBufferUpdated();
-        let id = setTimeout(() => {
-            this.printFromQueue();
-            clearTimeout(id);
-        }, this.printDelay);
-    }
-    processPrintInput(input = '') {
-        if (typeof (input) === 'string') {
-            let split = input.split('\n');
-            if (split.length > 1)
-                input = split;
-        }
-        if (input instanceof Array) {
-            input.forEach((s) => this.printQueue.unshift(s));
+        if (next.newline) {
+            let id = setTimeout(() => {
+                this.printFromQueue();
+                clearTimeout(id);
+            }, this.printDelay);
         }
         else {
-            this.printQueue.unshift(input);
+            this.printFromQueue();
+        }
+    }
+    processPrintInput(input = '', newline) {
+        let split = input.split('\n');
+        while (split.length > 0) {
+            let s = split.shift() ?? '';
+            this.printQueue.unshift({
+                input: s,
+                newline: split.length === 0 ? newline : true
+            });
         }
         if (this.isPrinting)
             return;
         this.printFromQueue();
     }
+    print = (s) => {
+        this.processPrintInput(s);
+    };
+    println = (s) => {
+        this.processPrintInput(s, true);
+    };
+    error = (msg) => {
+        this.println('[!] ' + msg);
+    };
     clearBuffer() {
-        this.buffer.length = 0;
+        this.buffer = '';
         this.fireBufferUpdated();
     }
     absolutePath(path) {
@@ -95,40 +107,33 @@ export class Shell {
             return;
         this.fireScriptSubmitted(script, args);
     }
-    print = (s) => {
-        this.processPrintInput(s);
-    };
-    error = (msg) => {
-        this.print('[!] ' + msg);
-    };
-    runPrompt() {
-        this.run(this.prompt.get());
-        this.prompt.pushHistory();
-    }
     onKeySignal = (sig) => {
         if (sig.type === 'up')
             return;
         this.prompt.handleKeySignal(sig);
         if (!this.isPrinting) {
-            this.buffer[0] = this.prompt.getLine();
             this.fireBufferUpdated();
         }
         if (sig.code === 'Enter') {
-            this.runPrompt();
+            let cmd = this.prompt.get();
+            this.prompt.pushHistory();
+            this.println(cmd);
+            this.run(cmd);
         }
     };
     run(argstr) {
+        const ret = () => this.print(this.prompt.prefix); // this only works as long as scripts run synchronously
         if (!/\S/.test(argstr))
-            return;
+            return ret();
         const args = parseArgs(argstr);
         if (args.length === 0) {
-            this.print('parse error');
-            return;
+            this.println('parse error');
+            return ret();
         }
         const name = args[0];
         if (!/^[a-zA-Z_$][\w$]*$/.test(name)) {
             this.error(`${name}: invalid identifier`);
-            return;
+            return ret();
         }
         if (Object.keys(this.builtins).includes(name)) {
             this.builtins[name](args);
@@ -136,8 +141,8 @@ export class Shell {
         else {
             this.submitScript(args);
         }
-        this.print(this.prompt.prefix); // this only works as long as all scripts run synchronously and without interruption
         this.fireBufferUpdated();
+        return ret();
     }
 }
 const parseArgs = (str) => {

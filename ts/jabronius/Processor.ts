@@ -9,8 +9,6 @@ export class Processor {
 
 	execute = (script: string, args: string[], input: string | null, outFn: Function, errFn: Function) => {
 		const IN = { tag: args[0], data: input };
-		const OUT = (str: string) => outFn(str);
-		const ERR = (str: string) => errFn(str);
 
 		try {
 			const f = new Function('SHELL','FS','ARGS','IN','OUT','ERR', script);

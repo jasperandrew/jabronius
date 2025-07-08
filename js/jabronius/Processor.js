@@ -7,8 +7,6 @@ export class Processor {
     }
     execute = (script, args, input, outFn, errFn) => {
         const IN = { tag: args[0], data: input };
-        const OUT = (str) => outFn(str);
-        const ERR = (str) => errFn(str);
         try {
             const f = new Function('SHELL', 'FS', 'ARGS', 'IN', 'OUT', 'ERR', script);
             return f(this.shell, this.filesys, args, IN, outFn, errFn);

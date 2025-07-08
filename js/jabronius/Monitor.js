@@ -11,9 +11,8 @@ export class Monitor {
         this.isOn = !this.isOn;
         this.firePowerUpdated();
     };
-    displayFrame = (textLines, clear = true, reversed = false) => {
-        if (reversed)
-            textLines.toReversed();
+    displayFrame = (textLines, clear = true) => {
+        textLines = textLines.toReversed(); // screen lines have [0] on bottom
         for (let i = 0; i < this.lines.length; i++) {
             let line = textLines[i];
             if (line !== '' && !line) {

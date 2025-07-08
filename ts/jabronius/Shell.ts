@@ -4,30 +4,35 @@ import { KeyInputSignal, ModCtrl } from "./Keyboard.js";
 export enum ExitCode { SUCCESS, ERROR, USAGE }
 type BuiltinCommand = (args: string[]) => ExitCode;
 
-export type BufferUpdateListener = (buffer: string[]) => void;
+interface PrintConfig {
+	input: string;
+	newline?: boolean;
+}
+
+export type BufferUpdateListener = (bufferLines: string[]) => void;
 export type ScriptSubmitListener = (script: string, args: string[], input: string | null, outFn: Function, errFn: Function) => void;
 
 export class Shell {
 	private isPrinting = false;
-	private printQueue: string[] = [];
+	private printQueue: PrintConfig[] = [];
 	private printDelay = 7;
-	private buffer: string[] = [];
+	private buffer: string = '';
 	private prompt = new Prompt();
 
 	readonly bufferUpdatedListeners: Set<BufferUpdateListener> = new Set();
-	private fireBufferUpdated = () => this.bufferUpdatedListeners.forEach((l: BufferUpdateListener) => l(this.buffer));
+	private fireBufferUpdated = () => this.bufferUpdatedListeners.forEach((l: BufferUpdateListener) => l(this.renderBuffer()));
 
 	readonly scriptSubmittedListeners: Set<ScriptSubmitListener> = new Set();
 	private fireScriptSubmitted = (script: string, args: string[]) => 
 		this.scriptSubmittedListeners.forEach((l: ScriptSubmitListener) => 
-			l(script, args, null, this.print, this.error));
+			l(script, args, null, this.println, this.error));
 
 	private builtins: { [id: string] : BuiltinCommand } = {
 		cd: (args: string[]) => {
 			let path = args[1] ?? '.',
 			dir = this.resolveFile(path);
 			if (dir?.type !== JFileType.Directory) return ExitCode.USAGE;
-			
+
 			this.dirPath = this.fs.getFilePath(dir);
 			return ExitCode.SUCCESS;
 		},
@@ -36,6 +41,10 @@ export class Shell {
 			window.location.reload();
 			return ExitCode.SUCCESS;
 		}
+	}
+
+	private renderBuffer() {
+		return (this.buffer + this.prompt.get()).split('\n');
 	}
 
 	constructor(
@@ -50,37 +59,50 @@ export class Shell {
 		let next = this.printQueue.pop();
 		if (next === undefined) {
 			this.isPrinting = false;
-			// this.buffer.unshift(this.prompt.getLine());
-			// this.fireBufferUpdated();
 			return;
 		}
 
-		this.buffer.unshift(next);
+		this.buffer += next.input + (next.newline ? '\n' : '');
 		this.fireBufferUpdated();
 
-		let id = setTimeout(() => {
+		if (next.newline) {
+			let id = setTimeout(() => {
+				this.printFromQueue();
+				clearTimeout(id);
+			}, this.printDelay);
+		} else {
 			this.printFromQueue();
-			clearTimeout(id);
-		}, this.printDelay);
+		}
 	}
 
-	private processPrintInput(input: string | string[] = '') {
-		if (typeof(input) === 'string') {
-			let split = (input as string).split('\n');
-			if (split.length > 1) input = split;
-		}
-		if (input instanceof Array) {
-			input.forEach((s: string) => this.printQueue.unshift(s));
-		} else {
-			this.printQueue.unshift(input as string);
+	private processPrintInput(input: string = '', newline?: boolean) {
+		let split = (input as string).split('\n');
+		while (split.length > 0) {
+			let s = split.shift() ?? '';
+			this.printQueue.unshift({
+				input: s,
+				newline: split.length === 0 ? newline : true
+			});
 		}
 
 		if (this.isPrinting) return;
 		this.printFromQueue();
 	}
 
+	print = (s?: string) => {
+		this.processPrintInput(s);
+	}
+
+	println = (s?: string) => {
+		this.processPrintInput(s, true);
+	}
+
+	error = (msg: string) => {
+		this.println('[!] ' + msg);
+	}
+
 	clearBuffer() {
-		this.buffer.length = 0;
+		this.buffer = '';
 		this.fireBufferUpdated();
 	}
 
@@ -110,45 +132,35 @@ export class Shell {
 		this.fireScriptSubmitted(script, args);
 	}
 
-	print = (s?: string | string[]) => {
-		this.processPrintInput(s);
-	}
-
-	error = (msg: string) => {
-		this.print('[!] ' + msg);
-	}
-
-	private runPrompt() {
-		this.run(this.prompt.get());
-		this.prompt.pushHistory();
-	}
-
 	onKeySignal = (sig: KeyInputSignal) => {
 		if (sig.type === 'up') return;
 		this.prompt.handleKeySignal(sig);
 		if (!this.isPrinting) {
-			this.buffer[0] = this.prompt.getLine();
 			this.fireBufferUpdated();
 		}
 
 		if (sig.code === 'Enter') {
-			this.runPrompt();
+			let cmd = this.prompt.get();
+			this.prompt.pushHistory();
+			this.println(cmd);
+			this.run(cmd);
 		}
 	}
 
 	run(argstr: string) {
-		if (!/\S/.test(argstr)) return;
+		const ret = () => this.print(this.prompt.prefix); // this only works as long as scripts run synchronously
+		if (!/\S/.test(argstr)) return ret();
 		
 		const args = parseArgs(argstr);
 		if (args.length === 0) {
-			this.print('parse error');
-			return;
+			this.println('parse error');
+			return ret();
 		}
 
 		const name = args[0];
 		if (!/^[a-zA-Z_$][\w$]*$/.test(name)) {
 			this.error(`${name}: invalid identifier`);
-			return;
+			return ret();
 		}
 
 		if (Object.keys(this.builtins).includes(name)) {
@@ -157,8 +169,8 @@ export class Shell {
 			this.submitScript(args);
 		}
 
-		this.print(this.prompt.prefix); // this only works as long as all scripts run synchronously and without interruption
 		this.fireBufferUpdated();
+		return ret();
 	}
 }
 

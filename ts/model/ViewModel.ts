@@ -1,4 +1,4 @@
-import { Keyboard, KeyInputSignal } from "../jabronius/Keyboard.js";
+import { CharKeys, Keyboard, KeyInputSignal } from "../jabronius/Keyboard.js";
 import { Monitor } from "../jabronius/Monitor.js";
 
 export class ViewModel {
@@ -30,6 +30,7 @@ export class ViewModel {
 
 	private onKeyboardEvent = (e: KeyboardEvent) => {
 		this.keyboard.onKeySignal(KeyInputSignal.fromKeyboardEvent(e));
+		if (CharKeys.includes(e.code)) e.preventDefault();
 	}
 
 	private onBlur = () => {

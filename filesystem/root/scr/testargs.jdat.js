@@ -1,1 +1,1 @@
-ARGS.forEach(arg => SHELL.print(arg));
+OUT(ARGS.join('\n'));
