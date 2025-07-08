@@ -1,25 +1,25 @@
 import { JData, JDirectory, JLink, JFileType } from "./FileStructure.js";
 export class Memory {
-    data = [];
-    driveReadyListeners = new Set();
-    fireDriveReady = () => this.driveReadyListeners.forEach((l) => l());
+    memory = [];
+    memoryReadyListeners = new Set();
+    fireMemoryReady = () => this.memoryReadyListeners.forEach((l) => l());
     memoryUpdatedListeners = new Set();
-    fireMemoryUpdated = () => this.memoryUpdatedListeners.forEach((l) => l(this.packDrive()));
-    initMemory = (memData) => {
-        this.unpackDrive(memData);
-        this.fireDriveReady();
+    fireMemoryUpdated = () => this.memoryUpdatedListeners.forEach((l) => l(this.packMemory()));
+    initMemory = (memoryStr) => {
+        this.unpackMemory(memoryStr);
+        this.fireMemoryReady();
     };
-    unpackDrive(driveData) {
-        this.data = driveData.split('\n').map((s) => decodeURIComponent(s));
+    unpackMemory(memoryStr) {
+        this.memory = memoryStr.split('\n').map((s) => decodeB64(s));
     }
-    packDrive() {
-        return this.data
-            .map((s) => encodeURIComponent(s))
+    packMemory() {
+        return this.memory
+            .map((s) => encodeB64(s))
             .join('\n');
     }
-    isValidAddress = (addr) => addr > 1 && addr < this.data.length;
-    isFileAddress = (addr) => this.isValidAddress(addr) && this.data[addr] && this.data[addr] !== '';
-    isDirAddress = (addr) => this.isFileAddress(addr) && this.data[addr][0] === '1';
+    isValidAddress = (addr) => addr > 1 && addr < this.memory.length;
+    isFileAddress = (addr) => this.isValidAddress(addr) && this.memory[addr] && this.memory[addr] !== '';
+    isDirAddress = (addr) => this.isFileAddress(addr) && this.memory[addr][0] === '1';
     formatDirData = (files) => files.map(f => `${f.name}/${f.address}`).join('|');
     formatFileData(file, content) {
         if (file instanceof JDirectory)
@@ -27,15 +27,15 @@ export class Memory {
         return `${file.type}${file.name}|${content ?? ''}`;
     }
     writeFileStructure(root) {
-        this.data[0] = JSON.stringify(root.files, (k, v) => k === 'parent' ? undefined : v);
-        this.data[1] = this.formatDirData(root.files);
+        this.memory[0] = JSON.stringify(root.files, (k, v) => k === 'parent' ? undefined : v);
+        this.memory[1] = this.formatDirData(root.files);
         this.fireMemoryUpdated();
     }
     readFileStructure() {
-        return this.data[0];
+        return this.memory[0];
     }
     createFile(name, type, parent, content) {
-        const address = this.data.length;
+        const address = this.memory.length;
         let file;
         switch (type) {
             case JFileType.Data:
@@ -48,7 +48,7 @@ export class Memory {
                 file = new JLink(name, address, parent);
                 break;
         }
-        this.data.push(this.formatFileData(file, content));
+        this.memory.push(this.formatFileData(file, content));
         this.fireMemoryUpdated();
         return file;
     }
@@ -64,11 +64,11 @@ export class Memory {
         }
         content = content ?? '';
         if (append) {
-            this.data[addr] += content;
+            this.memory[addr] += content;
             this.fireMemoryUpdated();
             return true;
         }
-        this.data[addr] = this.formatFileData(file, content);
+        this.memory[addr] = this.formatFileData(file, content);
         this.fireMemoryUpdated();
         return true;
     }
@@ -78,7 +78,7 @@ export class Memory {
             console.error('not a valid directory address: ' + addr);
             return false;
         }
-        this.data[addr] = JFileType.Directory.toString()
+        this.memory[addr] = JFileType.Directory.toString()
             + JSON.stringify(dir.files.map((f) => `${f.name}|${f.address}`));
         this.fireMemoryUpdated();
         return true;
@@ -88,14 +88,14 @@ export class Memory {
             console.error('not a valid file address: ' + addr);
             return null;
         }
-        return this.data[addr];
+        return this.memory[addr];
     }
     shredFile(addr) {
         if (!this.isFileAddress(addr)) {
             console.error('not a valid file address: ' + addr);
             return false;
         }
-        this.data[addr] = '';
+        this.memory[addr] = '';
         this.fireMemoryUpdated();
         return true;
     }

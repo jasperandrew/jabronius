@@ -6,7 +6,7 @@ export class FileStructure {
     root = new JRoot();
     constructor(memory) {
         this.memory = memory;
-        memory.driveReadyListeners.add(() => this.readFromDisk());
+        memory.memoryReadyListeners.add(() => this.readFromDisk());
         // this.root = this.readFromDisk();
         // console.log(this.root);
     }

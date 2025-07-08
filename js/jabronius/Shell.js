@@ -26,7 +26,7 @@ export class Shell {
             this.dirPath = this.fs.getFilePath(dir);
             return ExitCode.SUCCESS;
         },
-        resetdrive: (args) => {
+        rsmem: (args) => {
             localStorage.clear();
             window.location.reload();
             return ExitCode.SUCCESS;

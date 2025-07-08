@@ -1,6 +1,6 @@
 const isTruthy = (s) => ['1', 'true', 'yes', 'yep', 'on'].includes(s);
 const isFalsey = (s) => ['0', 'false', 'no', 'nope', 'off'].includes(s);
-const DRIVE_DATA_KEY = 'JABRONIUS_DRIVE_DATA';
+const MEMORY_KEY = 'JABRONIUS_MEMORY';
 function escape(s) {
     return s
         .replaceAll('\\', '\\\\')
@@ -12,12 +12,12 @@ function escape(s) {
 export class BrowserModel {
     constructor(hub, memory) {
         memory.memoryUpdatedListeners.add(this.onMemoryUpdated);
-        memory.initMemory(localStorage.getItem(DRIVE_DATA_KEY) ?? DRIVE_DATA);
+        memory.initMemory(localStorage.getItem(MEMORY_KEY) ?? JABRONIUS_MEMORY);
         hub.startupSystem(this.parseStartupConfigURL());
     }
     onMemoryUpdated = (memData) => {
         // console.log(data.split('\n').map((s:string) => escape(decodeURIComponent(s))).join('\n'));
-        localStorage.setItem(DRIVE_DATA_KEY, memData);
+        localStorage.setItem(MEMORY_KEY, memData);
     };
     parseStartupConfigURL = () => {
         const url = window.location.href;

@@ -26,7 +26,7 @@ export class FileStructure {
 	constructor(
 		private readonly memory: Memory
 	) {
-		memory.driveReadyListeners.add(() => this.readFromDisk());
+		memory.memoryReadyListeners.add(() => this.readFromDisk());
 		// this.root = this.readFromDisk();
 		// console.log(this.root);
 	}

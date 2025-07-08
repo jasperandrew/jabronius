@@ -4,7 +4,7 @@ import { StartupConfig, SystemHub } from "../jabronius/SystemHub.js";
 const isTruthy = (s: string) => ['1','true', 'yes','yep', 'on' ].includes(s);
 const isFalsey = (s: string) => ['0','false','no', 'nope','off'].includes(s);
 
-const DRIVE_DATA_KEY = 'JABRONIUS_DRIVE_DATA';
+const MEMORY_KEY = 'JABRONIUS_MEMORY';
 
 function escape(s: string) {
 	return s
@@ -21,14 +21,14 @@ export class BrowserModel {
 		memory: Memory
 	) {
 		memory.memoryUpdatedListeners.add(this.onMemoryUpdated);
-		memory.initMemory(localStorage.getItem(DRIVE_DATA_KEY) ?? DRIVE_DATA);
+		memory.initMemory(localStorage.getItem(MEMORY_KEY) ?? JABRONIUS_MEMORY);
 
 		hub.startupSystem(this.parseStartupConfigURL());
 	}
 
 	private onMemoryUpdated = (memData: string) => {
 		// console.log(data.split('\n').map((s:string) => escape(decodeURIComponent(s))).join('\n'));
-		localStorage.setItem(DRIVE_DATA_KEY, memData);
+		localStorage.setItem(MEMORY_KEY, memData);
 	}
 
 	private parseStartupConfigURL = () => {

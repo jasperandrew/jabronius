@@ -30,3 +30,26 @@ function renderedTextLength(html: string) {
 function clamp(n: number, min: number, max: number) {
   return Math.min(Math.max(n, min), max);
 }
+
+// https://stackoverflow.com/questions/30106476/using-javascripts-atob-to-decode-base64-doesnt-properly-decode-utf-8-strings
+function encodeB64(s: string) {
+	try {
+		return btoa(encodeURIComponent(s).replace(
+			/%([0-9A-F]{2})/g,
+			(match, p1) => String.fromCharCode(parseInt(p1, 16))
+		));
+	} catch (err) {
+		return '';
+	}
+}
+
+function decodeB64(s: string) {
+	try {
+		return decodeURIComponent(Array.prototype.map.call(
+			atob(s),
+			(c) =>  '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+		).join(''));
+	} catch (err) {
+		return '';
+	}
+}

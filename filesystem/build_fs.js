@@ -2,7 +2,27 @@ import fs from 'fs';
 const __dirname = import.meta.dirname;
 
 const ROOT = [];
-const DRIVE_DATA = ['file struct','root dir'];
+const MEMORY = ['','']; // first 2 lines reserved
+
+// https://stackoverflow.com/questions/30106476/using-javascripts-atob-to-decode-base64-doesnt-properly-decode-utf-8-strings
+function encodeB64(s) {
+	try {
+		return btoa(encodeURIComponent(s).replace(
+			/%([0-9A-F]{2})/g,
+			function(match, p1) {
+				return String.fromCharCode(parseInt(p1, 16))
+			}
+		));
+	} catch (err) {
+		return '';
+	}
+}
+
+function packMemory() {
+	return MEMORY
+		.map((s) => encodeB64(s))
+		.join('\n');
+}
 
 function formatDirFiles(files) {
 	return files.map(f => `${f.name}/${f.address}`).join('|');
@@ -22,13 +42,13 @@ function processDir(path, fsDir) {
 			let dir = {
 				type: 1, // 1 = directory
 				name: fileName,
-				address: DRIVE_DATA.length,
+				address: MEMORY.length,
 				files: []
 			};
 			fsDir.push(dir);
-			DRIVE_DATA.push('');
+			MEMORY.push('');
 			processDir(filePath, dir.files);
-			DRIVE_DATA[dir.address] = formatDriveData(dir);
+			MEMORY[dir.address] = formatDriveData(dir);
 		} else {
 			let nameParts = fileName.split('.');
 			nameParts.pop();
@@ -43,10 +63,10 @@ function processDir(path, fsDir) {
 			let file = {
 				type: type,
 				name: name,
-				address: DRIVE_DATA.length
+				address: MEMORY.length
 			};
 			fsDir.push(file);
-			DRIVE_DATA.push(formatDriveData(file, content));
+			MEMORY.push(formatDriveData(file, content));
 		}
 	});
 }
@@ -62,15 +82,10 @@ function escape(s) {
 
 processDir(__dirname + '/root', ROOT);
 
-DRIVE_DATA[0] = JSON.stringify(ROOT);
-DRIVE_DATA[1] = formatDirFiles(ROOT);
+MEMORY[0] = JSON.stringify(ROOT);
+MEMORY[1] = formatDirFiles(ROOT);
 
 fs.writeFileSync(
 	__dirname + '/../ts/jfs.ts',
-	`const DRIVE_DATA = \`${
-		DRIVE_DATA
-		.map(s => encodeURIComponent(s))
-		// .map(s => escape(s))
-		.join('\n')
-	}\n\`.trim();`
+	`const JABRONIUS_MEMORY = \`${packMemory()}\n\`.trim();`
 );

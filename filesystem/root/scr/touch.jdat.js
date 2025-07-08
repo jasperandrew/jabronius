@@ -10,7 +10,7 @@ if (SHELL.resolveFile(path)) {
 }
 
 if (!path.startsWith('/')) {
-   path = FS.getFilePath(SHELL.resolveDir('.')) + '/' + path;
+   path = FS.getFilePath(SHELL.resolveFile('.')) + '/' + path;
 };
 
 return FS.createFile(path);
