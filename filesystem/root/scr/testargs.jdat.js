@@ -1,0 +1,1 @@
+ARGS.forEach(arg => SHELL.print(arg));

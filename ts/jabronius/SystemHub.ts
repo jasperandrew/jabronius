@@ -22,25 +22,20 @@ export class SystemHub {
 	private readonly monitor: Monitor = new Monitor();
 	private readonly keyboard: Keyboard = new Keyboard();
 	private readonly filesys: FileStructure = new FileStructure(this.memory);
-	private readonly shell: Shell = new Shell(this, this.filesys, '/home/jasper');
-	private readonly cpu: Processor = new Processor(this, this.shell, this.filesys);
-
-	// the order the models are initialized is important
-	private readonly viewModel: ViewModel = new ViewModel(this.monitor, this.keyboard);
-	private readonly browserModel: BrowserModel = new BrowserModel(this, this.memory);
+	private readonly shell: Shell = new Shell(this.filesys, '/home/jasper');
+	private readonly cpu: Processor = new Processor(this.shell, this.filesys);
 
 	constructor() {
 		this.keyboard.keySignalListeners.add(this.shell.onKeySignal);
+		this.shell.bufferUpdatedListeners.add(this.monitor.displayFrame);
+		this.shell.scriptSubmittedListeners.add(this.cpu.execute);
+		
+		// the order the models are initialized is important
+		new ViewModel(this.monitor, this.keyboard);
+		new BrowserModel(this, this.memory);
 	}
 
-	execScript(script: string, args: string[]) {
-		this.cpu.execute(script, args, null,
-			(tag: string, str: string) => this.shell.print(str),
-			(tag: string, str: string) => this.shell.error(str)
-		);
-	}
-
-	startupSystem(config: StartupConfig | null) {
+	startupSystem = (config: StartupConfig | null) => {
 		if (!config) config = this.defConfig;
 		if (config.on) this.monitor.togglePower();
 
@@ -51,13 +46,5 @@ export class SystemHub {
 			return;
 		}
 		if (config.commands) config.commands.forEach(c => this.shell.run(c));
-	}
-
-	updateFrame(promptOnly: boolean) {
-		let buf = this.shell.getFrameBuffer();
-		if (promptOnly) {
-			buf = buf.slice((promptOnly ? 1 : 0) * -1);
-		}
-		this.monitor.displayFrame(buf, !promptOnly);
 	}
 }

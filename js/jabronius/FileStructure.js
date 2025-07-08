@@ -177,6 +177,12 @@ export class JFile {
     }
     toString() { return this.name; }
 }
+export class JData extends JFile {
+    constructor(name, address, parent) {
+        super(name, JFileType.Data, address, parent);
+    }
+    toString() { return `${this.name}*`; }
+}
 export class JDirectory extends JFile {
     files = [];
     constructor(name, address, parent) {
@@ -215,12 +221,6 @@ export class JDirectory extends JFile {
         let i = this.files.indexOf(f);
         this.files.splice(i, 1);
     }
-}
-export class JData extends JFile {
-    constructor(name, address, parent) {
-        super(name, JFileType.Data, address, parent);
-    }
-    toString() { return `${this.name}*`; }
 }
 export class JLink extends JFile {
     constructor(name, address, parent) {

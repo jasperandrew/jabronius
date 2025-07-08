@@ -1,24 +1,22 @@
 import { FileStructure } from "./FileStructure.js";
 import { Shell } from "./Shell.js";
-import { SystemHub } from "./SystemHub.js";
 
 export class Processor {
 	constructor(
-		private readonly hub: SystemHub,
 		private readonly shell: Shell,
 		private readonly filesys: FileStructure
 	) {}
 
-	execute(script: string, args: string[], input: string | null, outFn: Function, errFn: Function) {
+	execute = (script: string, args: string[], input: string | null, outFn: Function, errFn: Function) => {
 		const IN = { tag: args[0], data: input };
-		const OUT = (str: string) => outFn(args[0], str);
-		const ERR = (str: string) => errFn(args[0], str);
+		const OUT = (str: string) => outFn(str);
+		const ERR = (str: string) => errFn(str);
 
 		try {
-			const f = new Function('SYS','SHELL','FS','ARGS','IN','OUT','ERR', script);
-			return f(this.hub, this.shell, this.filesys, args, IN, OUT, ERR);
+			const f = new Function('SHELL','FS','ARGS','IN','OUT','ERR', script);
+			return f(this.shell, this.filesys, args, IN, outFn, errFn);
 		} catch (e) {
-			ERR(buildErrorMessage(e));
+			errFn(buildErrorMessage(e));
 			console.error(e);
 			return false;
 		}

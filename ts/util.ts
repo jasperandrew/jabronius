@@ -26,3 +26,7 @@ function renderedTextLength(html: string) {
 	el.innerHTML = html;
 	return el.textContent?.length ?? 0;
 }
+
+function clamp(n: number, min: number, max: number) {
+  return Math.min(Math.max(n, min), max);
+}

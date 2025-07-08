@@ -1,101 +1,87 @@
 import { JFileType } from "./FileStructure.js";
 import { ModCtrl } from "./Keyboard.js";
+export var ExitCode;
+(function (ExitCode) {
+    ExitCode[ExitCode["SUCCESS"] = 0] = "SUCCESS";
+    ExitCode[ExitCode["ERROR"] = 1] = "ERROR";
+    ExitCode[ExitCode["USAGE"] = 2] = "USAGE";
+})(ExitCode || (ExitCode = {}));
 export class Shell {
-    hub;
-    filesys;
+    fs;
     dirPath;
-    _printing = false;
-    _print_queue = [];
-    _print_delay = true;
-    _buffer = '';
-    _prompt = '';
-    _prompt_char = '$';
-    _history = (() => {
-        let _lvl = 0, _list = [], _curr = '', nav = (key) => {
-            if (_lvl === 0)
-                _curr = this._prompt;
-            if (key === 'ArrowUp') {
-                _lvl += (_lvl > _list.length - 1 ? 0 : 1);
-            }
-            else if (key === 'ArrowDown') {
-                _lvl += (_lvl < 0 ? 0 : -1);
-            }
-            if (_lvl > 0)
-                this._prompt = _list[_lvl - 1];
-            else
-                this._prompt = _curr;
-        }, add = (cmd) => {
-            _lvl = 0;
-            if (_list[0] !== cmd)
-                _list.unshift(cmd);
-        }, setLvl = (n) => { _lvl = n; };
-        return { nav: nav, add: add, setLvl: setLvl };
-    })();
-    constructor(hub, filesys, dirPath = '/') {
-        this.hub = hub;
-        this.filesys = filesys;
+    isPrinting = false;
+    printQueue = [];
+    printDelay = 7;
+    buffer = [];
+    prompt = new Prompt();
+    bufferUpdatedListeners = new Set();
+    fireBufferUpdated = () => this.bufferUpdatedListeners.forEach((l) => l(this.buffer));
+    scriptSubmittedListeners = new Set();
+    fireScriptSubmitted = (script, args) => this.scriptSubmittedListeners.forEach((l) => l(script, args, null, this.print, this.error));
+    builtins = {
+        cd: (args) => {
+            let path = args[1] ?? '.', dir = this.resolveFile(path);
+            if (dir?.type !== JFileType.Directory)
+                return ExitCode.USAGE;
+            this.dirPath = this.fs.getFilePath(dir);
+            return ExitCode.SUCCESS;
+        },
+        resetdrive: (args) => {
+            localStorage.clear();
+            window.location.reload();
+            return ExitCode.SUCCESS;
+        }
+    };
+    constructor(fs, dirPath = '/') {
+        this.fs = fs;
         this.dirPath = dirPath;
     }
-    _getAbsolutePath(path) {
+    resolveFile = (path) => this.fs.getFile(this.absolutePath(path));
+    printFromQueue() {
+        this.isPrinting = true;
+        let next = this.printQueue.pop();
+        if (next === undefined) {
+            this.isPrinting = false;
+            // this.buffer.unshift(this.prompt.getLine());
+            // this.fireBufferUpdated();
+            return;
+        }
+        this.buffer.unshift(next);
+        this.fireBufferUpdated();
+        let id = setTimeout(() => {
+            this.printFromQueue();
+            clearTimeout(id);
+        }, this.printDelay);
+    }
+    processPrintInput(input = '') {
+        if (typeof (input) === 'string') {
+            let split = input.split('\n');
+            if (split.length > 1)
+                input = split;
+        }
+        if (input instanceof Array) {
+            input.forEach((s) => this.printQueue.unshift(s));
+        }
+        else {
+            this.printQueue.unshift(input);
+        }
+        if (this.isPrinting)
+            return;
+        this.printFromQueue();
+    }
+    clearBuffer() {
+        this.buffer.length = 0;
+        this.fireBufferUpdated();
+    }
+    absolutePath(path) {
         if (path?.startsWith('/'))
             return path;
         return this.dirPath + (path ? `/${path}` : '');
     }
-    _verifyDir(file) {
-        if (file?.type !== JFileType.Directory) {
-            return null;
-        }
-        return file;
-    }
-    _fireFrameUpdated(promptOnly) {
-        this.hub.updateFrame(promptOnly);
-    }
-    _builtin = {
-        cd: (args) => {
-            let path = args[1] ?? '.', dir = this.resolveDir(path);
-            if (!dir)
-                return false;
-            this.dirPath = this.filesys.getFilePath(dir);
-            return true;
-        },
-        resetdrive: () => {
-            localStorage.clear();
-            window.location.reload();
-        }
-    };
-    _submitPrompt() {
-        const argstr = this._prompt.trim();
-        this._prompt = '';
-        this.print(this._prompt_char + ' ' + argstr);
-        this._history.add(argstr);
-        this.run(argstr);
-    }
-    _printFromQueue() {
-        this._printing = true;
-        if (this._print_queue.length === 0) {
-            this._printing = false;
-            return;
-        }
-        let next;
-        [next, ...this._print_queue] = this._print_queue;
-        if (!next)
-            next = '';
-        if (typename(next) !== 'String')
-            next = next.toString();
-        let split = next.split(/[\n\r]/);
-        if (next !== split[0]) {
-            [next, ...split] = split;
-            for (let i = split.length - 1; i >= 0; i--)
-                this._print_queue.unshift(split[i]);
-        }
-        this._buffer += next + '\n';
-        this._fireFrameUpdated(false);
-        window.setTimeout(() => this._printFromQueue(), this._print_delay ? 7 : 0);
-    }
-    _runScript(args, dir = '/scr') {
+    submitScript(args, dir = '/scr') {
         const name = args[0];
         const cmdPath = dir + `/${name}`;
-        let file = this.filesys.getFile(cmdPath);
+        let file = this.fs.getFile(cmdPath);
         if (!file) {
             this.error(`${name}: command not found`);
             return;
@@ -104,78 +90,55 @@ export class Shell {
             this.error(`${name}: is a directory`);
             return;
         }
-        let script = this.filesys.readFile(file);
+        let script = this.fs.readFile(file);
         if (!script)
             return;
-        this.hub.execScript(script, args);
+        this.fireScriptSubmitted(script, args);
     }
-    error(msg) {
+    print = (s) => {
+        this.processPrintInput(s);
+    };
+    error = (msg) => {
         this.print('[!] ' + msg);
-    }
-    print(input = '') {
-        this._print_queue.push(input);
-        if (this._printing)
-            return;
-        this._printFromQueue();
+    };
+    runPrompt() {
+        this.run(this.prompt.get());
+        this.prompt.pushHistory();
     }
     onKeySignal = (sig) => {
         if (sig.type === 'up')
             return;
-        if (sig.char) {
-            this._prompt += sig.char;
-            this._history.setLvl(0);
-            this._fireFrameUpdated(true);
-            return;
+        this.prompt.handleKeySignal(sig);
+        if (!this.isPrinting) {
+            this.buffer[0] = this.prompt.getLine();
+            this.fireBufferUpdated();
         }
-        switch (sig.code) {
-            case 'Enter':
-                this._submitPrompt();
-                return;
-            case 'ArrowUp':
-            case 'ArrowDown':
-                this._history.nav(sig.code);
-                break;
-            case 'Backspace':
-                if (sig.mod(ModCtrl)) {
-                    let val = this._prompt;
-                    const match = val.match(/\S*\s*$/);
-                    if (match !== null)
-                        this._prompt = val.slice(0, val.lastIndexOf(match.toString()));
-                }
-                else {
-                    this._prompt = this._prompt.slice(0, -1);
-                }
-            default:
+        if (sig.code === 'Enter') {
+            this.runPrompt();
         }
-        this._fireFrameUpdated(true);
     };
     run(argstr) {
         if (!/\S/.test(argstr))
             return;
         const args = parseArgs(argstr);
+        if (args.length === 0) {
+            this.print('parse error');
+            return;
+        }
         const name = args[0];
         if (!/^[a-zA-Z_$][\w$]*$/.test(name)) {
             this.error(`${name}: invalid identifier`);
             return;
         }
-        if (Object.keys(this._builtin).includes(name)) {
-            this._builtin[name](args);
+        if (Object.keys(this.builtins).includes(name)) {
+            this.builtins[name](args);
         }
         else {
-            this._runScript(args);
+            this.submitScript(args);
         }
+        this.print(this.prompt.prefix); // this only works as long as all scripts run synchronously and without interruption
+        this.fireBufferUpdated();
     }
-    getFrameBuffer() {
-        let buf = [...this._buffer.split('\n')];
-        buf[buf.length - 1] += this._prompt_char + ' ' + this._prompt;
-        return buf;
-    }
-    clearBuffer() {
-        this._buffer = '';
-        this._fireFrameUpdated(false);
-    }
-    resolveFile(path) { return this.filesys.getFile(this._getAbsolutePath(path)); }
-    resolveDir(path) { return this._verifyDir(this.resolveFile(path)); }
 }
 const parseArgs = (str) => {
     const delims = ['"', '\'', "\`"];
@@ -195,7 +158,7 @@ const parseArgs = (str) => {
             while (str[i] !== d) {
                 i++;
                 if (i >= str.length) {
-                    console.error(`parse: missing delimiter (${d})`); // todo: handle this better
+                    console.error(`parse: missing delimiter (${d})`); // TODO: handle this better
                     return [];
                 }
             }
@@ -208,3 +171,51 @@ const parseArgs = (str) => {
     }
     return args;
 };
+class Prompt {
+    prefix = '$ ';
+    idx = 0;
+    history = [''];
+    navHistory = (up) => {
+        this.idx = clamp(this.idx + (up ? 1 : -1), 0, this.history.length - 1);
+    };
+    navPrev = () => this.navHistory(true);
+    navNext = () => this.navHistory(false);
+    resetNav = () => this.idx = 0;
+    get = () => this.history[this.idx];
+    getLine = () => this.prefix + this.get();
+    set = (s) => {
+        this.history[0] = s;
+        this.resetNav();
+    };
+    append = (s) => this.set(this.get() + s);
+    pushHistory = () => {
+        this.history[0] = this.get().trim();
+        this.history.unshift('');
+        this.history = [...new Set(this.history)];
+        this.resetNav();
+    };
+    handleKeySignal = (sig) => {
+        if (sig.char) {
+            this.append(sig.char);
+            return;
+        }
+        switch (sig.code) {
+            case 'ArrowUp':
+                this.navPrev();
+                break;
+            case 'ArrowDown':
+                this.navNext();
+                break;
+            case 'Backspace':
+                let s = this.get();
+                if (sig.mod(ModCtrl)) {
+                    const match = s.match(/\S*\s*$/);
+                    if (match !== null)
+                        this.set(s.slice(0, s.lastIndexOf(match.toString())));
+                }
+                else {
+                    this.set(s.slice(0, -1));
+                }
+        }
+    };
+}

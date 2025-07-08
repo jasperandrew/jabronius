@@ -11,9 +11,9 @@ export class Monitor {
         this.isOn = !this.isOn;
         this.firePowerUpdated();
     };
-    displayFrame(textLines, clear = true, reversed = true) {
+    displayFrame = (textLines, clear = true, reversed = false) => {
         if (reversed)
-            textLines.reverse();
+            textLines.toReversed();
         for (let i = 0; i < this.lines.length; i++) {
             let line = textLines[i];
             if (line !== '' && !line) {
@@ -28,5 +28,5 @@ export class Monitor {
             this.lines[i] = line;
         }
         this.fireLinesUpdated();
-    }
+    };
 }

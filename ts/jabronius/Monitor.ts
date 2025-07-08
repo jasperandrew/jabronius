@@ -18,8 +18,8 @@ export class Monitor {
 		this.firePowerUpdated();
 	}
 
-	displayFrame(textLines: string[], clear=true, reversed=true) {
-		if (reversed) textLines.reverse();
+	displayFrame = (textLines: string[], clear=true, reversed=false) => {
+		if (reversed) textLines.toReversed();
 		for (let i = 0; i < this.lines.length; i++) {
 			let line = textLines[i];
 			if (line !== '' && !line) {

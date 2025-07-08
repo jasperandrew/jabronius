@@ -1,2 +1,5 @@
 OUT('opening in new window...');
-window.setTimeout(() => { window.open('http://www.jasperandrew.me/resume.pdf'); }, 500);
+let id = setTimeout(() => {
+   open('http://www.jasperandrew.me/resume.pdf');
+   clearTimeout(id);
+}, 500);
