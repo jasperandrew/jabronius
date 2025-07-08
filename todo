@@ -1,7 +1,5 @@
 - path/other vars
 - broken link error reporting
-- file deletion (destroy file)
-- tab completion
 
 - commands:
 	- help
@@ -11,25 +9,14 @@
 - JaBRONIUS JavaScript Shell Syntax (JJSS)
 
 - auto-type
-- regex argument parsing?
 - program wait for input
-
 - move all sys output to out function
 
-- component responsibilities:
-	- monitor: display data
-	- drive: store/retrieve data
-	- keyboard: send inputs
-	- processor: read, write, execute
-	- file system: maintain root, resolve files/paths
-	- shell: abstract/interact with file system
-	- system: communicate between components
+- prompt features
+	- add caret to prompt
+	- prompt newline support
+	- tab completion
 
-- add blinking caret to prompt
-- prompt newline support
-- save drive/filesystem state in browser
 - mobile-friendly input
-- scroll buffer
 - text-based game
-
-- more binding/interfaces/listeners
+- text editor

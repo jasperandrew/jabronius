@@ -37,7 +37,7 @@ export class Shell {
 			return ExitCode.SUCCESS;
 		}
 	}
-	
+
 	constructor(
 		private readonly fs: FileStructure,
 		private dirPath = '/'
@@ -144,13 +144,13 @@ export class Shell {
 			this.print('parse error');
 			return;
 		}
-		
+
 		const name = args[0];
 		if (!/^[a-zA-Z_$][\w$]*$/.test(name)) {
 			this.error(`${name}: invalid identifier`);
 			return;
 		}
-		
+
 		if (Object.keys(this.builtins).includes(name)) {
 			this.builtins[name](args);
 		} else {
@@ -165,10 +165,10 @@ export class Shell {
 const parseArgs = (str: string) => {
 	const delims = ['"', '\'', "\`"];
 	let args = [], start = 0, i = 0;
-	
+
 	while (i < str.length) {
 		let arg = '';
-		
+
 		if (i >= str.length-1) { // e "u c" f
 			arg = str.slice(start);
 		} else if (str[i] === ' ') {
@@ -187,11 +187,11 @@ const parseArgs = (str: string) => {
 			arg = str.slice(start, i);
 			start = i+1;
 		}
-		
+
 		if (arg !== '' && arg !== ' ') args.push(arg.trim());
 		i++;
 	}
-	
+
 	return args;
 }
 
@@ -199,31 +199,31 @@ class Prompt {
 	prefix = '$ ';
 	private idx = 0;
 	private history: string[] = [''];
-	
+
 	private navHistory = (up: boolean) => {
 		this.idx = clamp(this.idx + (up ? 1 : -1), 0, this.history.length-1);
 	}
-	
+
 	navPrev = () => this.navHistory(true);
 	navNext = () => this.navHistory(false);
 	resetNav = () => this.idx = 0;
-	
+
 	get = () => this.history[this.idx];
 	getLine = () => this.prefix + this.get();
-	
+
 	set = (s: string) => {
 		this.history[0] = s;
 		this.resetNav();
 	}
 	append = (s: string) => this.set(this.get() + s);
-	
+
 	pushHistory = () => {
 		this.history[0] = this.get().trim();
 		this.history.unshift('');
 		this.history = [...new Set(this.history)];
 		this.resetNav();
 	}
-	
+
 	handleKeySignal = (sig: KeyInputSignal) => {
 		if (sig.char) {
 			this.append(sig.char);

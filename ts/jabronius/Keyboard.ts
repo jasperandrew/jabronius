@@ -15,26 +15,26 @@ export class Keyboard {
 	// TODO: fix caps lock light
 	private setCapsOn(isOn: boolean) {
 		this.caps = isOn;
-	};	
+	}
 
 	private keyDown = (sig: KeyInputSignal) => {
 		if (!sig.mod(ModAlt)) {
 			this.litKeys.delete('AltLeft');
 			this.litKeys.delete('AltRight');
-		}	
+		}
 
 		if (!this.passwd) this.litKeys.add(sig.code);
 
 		if (sig.code === 'CapsLock') this.setCapsOn(true);
 
 		this.fireLitKeysUpdated();
-	};	
+	}
 
 	private keyUp = (sig: KeyInputSignal) => {
 		this.litKeys.delete(sig.code);
 		if (sig.code === 'CapsLock') this.setCapsOn(false);
 		this.fireLitKeysUpdated();
-	};	
+	}
 
 	onKeySignal = (sig: KeyInputSignal) => {
 		this.fireKeySignal(sig);

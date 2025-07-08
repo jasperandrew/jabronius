@@ -10,7 +10,6 @@ export class Keyboard {
     setCapsOn(isOn) {
         this.caps = isOn;
     }
-    ;
     keyDown = (sig) => {
         if (!sig.mod(ModAlt)) {
             this.litKeys.delete('AltLeft');

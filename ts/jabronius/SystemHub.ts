@@ -29,7 +29,7 @@ export class SystemHub {
 		this.keyboard.keySignalListeners.add(this.shell.onKeySignal);
 		this.shell.bufferUpdatedListeners.add(this.monitor.displayFrame);
 		this.shell.scriptSubmittedListeners.add(this.cpu.execute);
-		
+
 		// the order the models are initialized is important
 		new ViewModel(this.monitor, this.keyboard);
 		new BrowserModel(this, this.memory);
